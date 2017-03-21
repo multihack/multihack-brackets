@@ -7,4 +7,4 @@ Synchronizes code and project structure between multiple users in realtime.
 3. Click **Join Room**. Your code is now being synchronized!
 4. **File > Stop Multihack** will stop collaboration.
 
-This project currently only syncs *changes* in code. You will need to start with the same code on joining the room. (This may change as the project develops.)
+This project currently only syncs *changes* in code. You will need to start with the same code on joining the room. Try using Git for this.
