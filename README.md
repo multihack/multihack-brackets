@@ -10,6 +10,6 @@ Synchronizes code and project structure between multiple users in realtime.
 This project currently only syncs *changes* and will not realize any code differences on joining a room. Use Git or another version control to make sure you start with the same initial code.
 
 ## Running Your Own Instance
-This extension points to the authors server by default.  
+This extension points to the author's server by default.  
 Please run your own instance of [multihack-server](https://github.com/RationalCoding/multihack-server) if you want lower latency and improved privacy.  
 You can target a different host through the Brackets option **multihack-brackets.hostname**.
