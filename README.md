@@ -24,4 +24,4 @@ You can target a different host through the Brackets option **multihack-brackets
 - [ ] Public coding rooms
 - [ ] End-to-end encryption
 
-Also check out [the web version](https://github.com/RationalCoding/multihack-brackets). (Not yet compatible with this extension.)
+Also check out [the web version](https://github.com/RationalCoding/multihack-web). (Not yet compatible with this extension.)
