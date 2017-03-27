@@ -60,13 +60,14 @@ define(function (require, exports, module) {
     Dialogs.showModalDialog(
       '', 
       'Multihack', 
-      '<p>Enter the ID for the room you want to join.</p><input id="multihack-room" placeholder="roomID" type="text"></input>', 
+      '<p>Enter the ID for the room you want to join.</p><input id="multihack-room" placeholder="roomID" type="text"></input><p>Make sure all members have the same project before starting.</p>', 
       [customButton('Join Room', true), customButton('Cancel')]
     )
-    document.querySelector('#multihack-room').focus()
+    var roomInput = document.querySelector('#multihack-room')
+    roomInput.value = Math.random().toString(36).substr(2, 20);
     
     document.querySelector('[data-button-id="multihack-button-JoinRoom"]').addEventListener('click', function () {  
-      var room = document.querySelector('#multihack-room').value
+      var room = roomInput.value
       if (!room) return
       
       console.log(room)
@@ -125,8 +126,6 @@ define(function (require, exports, module) {
       editorMutexLock = false
     } else {
       // TODO: Batch changes
-      console.log(projectBasePath+data.filePath)
-
       DocumentManager.getDocumentForPath(projectBasePath+data.filePath).then(function (doc) {
         doc.replaceRange(data.change.text, data.change.from, data.change.to)
         doc.addRef()
