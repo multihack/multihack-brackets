@@ -14,3 +14,12 @@ This extension currently only syncs *changes* and will not realize any code diff
 This extension points to the author's server by default.  
 Please run your own instance of [multihack-server](https://github.com/RationalCoding/multihack-server) if you want lower latency and improved privacy.  
 You can target a different host through the Brackets option **multihack-brackets.hostname**.
+
+## Future Features
+- [ ] Integration with web version
+- [ ] Integration with future versions on Atom and VSCode
+- [ ] Switch from server forwarding to P2P
+- [ ] Text, audio and video chat
+- [ ] Initial code sync
+- [ ] Public coding rooms
+- [ ] End-to-end encryption
