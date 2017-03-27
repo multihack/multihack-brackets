@@ -23,5 +23,6 @@ You can target a different host through the Brackets option **multihack-brackets
 - [ ] Initial code sync
 - [ ] Public coding rooms
 - [ ] End-to-end encryption
+- [ ] Cursor and selection tracking
 
 Also check out [the web version](https://github.com/RationalCoding/multihack-web). (Not yet compatible with this extension.)
