@@ -56,7 +56,6 @@ define(function (require, exports, module) {
   }
 
   function handleStart () {
-    console.log('hs')
     Dialogs.showModalDialog(
       '', 
       'Multihack', 
@@ -64,7 +63,8 @@ define(function (require, exports, module) {
       [customButton('Join Room', true), customButton('Cancel')]
     )
     var roomInput = document.querySelector('#multihack-room')
-    roomInput.value = Math.random().toString(36).substr(2, 20);
+    roomInput.value = Math.random().toString(36).substr(2, 20)
+    roomInput.select()
     
     document.querySelector('[data-button-id="multihack-button-JoinRoom"]').addEventListener('click', function () {  
       var room = roomInput.value
@@ -111,6 +111,9 @@ define(function (require, exports, module) {
   
   function sendLocalChange (cm, change) {
     if (editorMutexLock || !isSyncing) return
+    if (!documentRelativePath) {
+      documentRelativePath = FileUtils.getRelativeFilename(projectBasePath, EditorManager.getActiveEditor().document.file._path)
+    }
     remote.change(documentRelativePath, change) // Send change to remote peers
   }
   
