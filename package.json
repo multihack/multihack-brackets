@@ -3,7 +3,7 @@
   "title": "Multihack",
   "description": "Supercharge your IDE with realtime collaboration features!",
   "homepage": "https://github.com/RationalCoding/multihack-brackets",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "author": "Thomas Mullen",
   "license": "MIT",
   "scripts": {

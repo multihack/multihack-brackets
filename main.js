@@ -51,7 +51,7 @@ define(function (require, exports, module) {
   function setupEventListeners () {
     projectBasePath = ProjectManager.getProjectRoot().fullPath
     ProjectManager.on('projectOpen', handleStop) // Stop sync on project open
-    EditorManager.on('activeEditorChange', handleLocalChange)
+    EditorManager.on('activeEditorChange', handleEditorChange)
     DocumentManager.on('pathDeleted', handleLocalDeleteFile)
   }
 
@@ -70,7 +70,7 @@ define(function (require, exports, module) {
       var room = roomInput.value
       if (!room) return
       
-      console.log(room)
+      projectBasePath = ProjectManager.getProjectRoot().fullPath
       remote = new RemoteManager(prefs.get('hostname'), room)
 
       remote.on('change', handleRemoteChange)
@@ -97,14 +97,14 @@ define(function (require, exports, module) {
     console.log('MH stopped')
   }
 
-  function handleLocalChange ($event, newEditor, oldEditor) {
+  function handleEditorChange ($event, newEditor, oldEditor) {
     if (oldEditor) {
       oldEditor._codeMirror.off('change', sendLocalChange)
     }
 
     if (newEditor) {
       currentEditor = newEditor
-      documentRelativePath = FileUtils.getRelativeFilename(projectBasePath, newEditor.document.file._path)
+      documentRelativePath = FileUtils.getRelativeFilename(projectBasePath, newEditor.document.file.fullPath)
       newEditor._codeMirror.on('change', sendLocalChange)
     }
   }
@@ -112,7 +112,11 @@ define(function (require, exports, module) {
   function sendLocalChange (cm, change) {
     if (editorMutexLock || !isSyncing) return
     if (!documentRelativePath) {
-      documentRelativePath = FileUtils.getRelativeFilename(projectBasePath, EditorManager.getActiveEditor().document.file._path)
+      documentRelativePath = FileUtils.getRelativeFilename(projectBasePath, EditorManager.getActiveEditor().document.file.fullPath)
+      if (!documentRelativePath) {
+        // Outside of project
+        return
+      }
     }
     remote.change(documentRelativePath, change) // Send change to remote peers
   }
