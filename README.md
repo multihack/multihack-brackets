@@ -1,5 +1,6 @@
 # multihack-brackets
-Synchronizes code and project structure between multiple users in realtime.
+Synchronizes code and project structure between multiple users in realtime.  
+Also check out [the web version](https://github.com/RationalCoding/multihack-web). (Now compatible with this extension!)
 
 ## Usage
 1. You and another person with this extension should have the same project open.  
@@ -24,5 +25,3 @@ You can target a different host through the Brackets option **multihack-brackets
 - [ ] Public coding rooms
 - [ ] End-to-end encryption
 - [ ] Cursor and selection tracking
-
-Also check out [the web version](https://github.com/RationalCoding/multihack-web). (Now compatible with this extension!)
