@@ -16,7 +16,7 @@ Please run your own instance of [multihack-server](https://github.com/RationalCo
 You can target a different host through the Brackets option **multihack-brackets.hostname**.
 
 ## Future Features
-- [ ] Integration with web version
+- [x] Integration with web version
 - [ ] Integration with future versions on Atom and VSCode
 - [ ] Switch from server forwarding to P2P
 - [ ] Text, audio and video chat
@@ -25,4 +25,4 @@ You can target a different host through the Brackets option **multihack-brackets
 - [ ] End-to-end encryption
 - [ ] Cursor and selection tracking
 
-Also check out [the web version](https://github.com/RationalCoding/multihack-web). (Not yet compatible with this extension.)
+Also check out [the web version](https://github.com/RationalCoding/multihack-web). (Now compatible with this extension!)
