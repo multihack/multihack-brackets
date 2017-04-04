@@ -9,6 +9,11 @@ Also check out [the web version](https://github.com/RationalCoding/multihack-web
 4. Click **Join Room**. Your code is now being synchronized!  
 5. **File > Stop Multihack** will stop collaboration.  
 
+## Voice Calls
+Brackets does not allow microphone access by default. You must launch brackets with:  
+`brackets --args --enable-media-stream` if you want to enable voice calls.  
+
+
 This extension currently only syncs *changes* and will not realize any code differences on joining a room. Use Git or another version control to make sure you start with the same initial code.
 
 ## Running Your Own Instance
