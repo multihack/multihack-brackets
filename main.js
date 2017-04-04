@@ -5,6 +5,8 @@ define(function (require, exports, module) {
   
   var START_COMMAND_ID = 'rationalcoding.multihack.start'
   var STOP_COMMAND_ID = 'rationalcoding.multihack.stop'
+  var VOICE_JOIN_COMMAND_ID = 'rationalcoding.multihack.voicejoin'
+  var VOICE_LEAVE_COMMAND_ID = 'rationalcoding.multihack.voiceleave'
   var DEFAULT_HOSTNAME = 'https://quiet-shelf-57463.herokuapp.com'
   
   var AppInit = brackets.getModule('utils/AppInit')
@@ -32,6 +34,8 @@ define(function (require, exports, module) {
 
   CommandManager.register('Start MultiHack', START_COMMAND_ID, handleStart)
   CommandManager.register('Stop MultiHack', STOP_COMMAND_ID, handleStop)
+  CommandManager.register('Join Voice Call', VOICE_JOIN_COMMAND_ID, handleVoiceJoin)
+  CommandManager.register('Leave Voice Call', VOICE_LEAVE_COMMAND_ID, handleVoiceLeave)
 
   function init () {
     setupPreferences()
@@ -53,6 +57,20 @@ define(function (require, exports, module) {
     ProjectManager.on('projectOpen', handleStop) // Stop sync on project open
     EditorManager.on('activeEditorChange', handleEditorChange)
     DocumentManager.on('pathDeleted', handleLocalDeleteFile)
+  }
+  
+  function handleVoiceJoin () {
+    fileMenu.removeMenuItem(VOICE_JOIN_COMMAND_ID)
+    fileMenu.addMenuItem(VOICE_LEAVE_COMMAND_ID)
+    
+    remote.voice.join()
+  }
+  
+  function handleVoiceLeave () {
+    fileMenu.removeMenuItem(VOICE_LEAVE_COMMAND_ID)
+    fileMenu.addMenuItem(VOICE_JOIN_COMMAND_ID)
+    
+    remote.voice.leave()
   }
 
   function handleStart () {
@@ -78,6 +96,7 @@ define(function (require, exports, module) {
 
       fileMenu.removeMenuItem(START_COMMAND_ID)
       fileMenu.addMenuItem(STOP_COMMAND_ID)
+      fileMenu.addMenuItem(VOICE_JOIN_COMMAND_ID)
       isSyncing = true
 
       console.log('MH started')

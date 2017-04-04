@@ -1,9 +1,9 @@
 {
   "name": "multihack-brackets",
   "title": "Multihack",
-  "description": "Supercharge your IDE with realtime collaboration features!",
+  "description": "Supercharge your IDE with realtime collaboration features! Code synchronization and integrated voice calls.",
   "homepage": "https://github.com/RationalCoding/multihack-brackets",
-  "version": "1.0.1",
+  "version": "1.1.1",
   "author": "Thomas Mullen",
   "license": "MIT",
   "scripts": {
