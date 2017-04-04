@@ -20,8 +20,9 @@ You can target a different host through the Brackets option **multihack-brackets
 - [x] Integration with web version
 - [ ] Integration with future versions on Atom and VSCode
 - [ ] Switch from server forwarding to P2P
-- [ ] Text, audio and video chat
+- [x] Audio calls
+- [ ] Video calls
+- [ ] Text chat
 - [ ] Initial code sync
-- [ ] Public coding rooms
 - [ ] End-to-end encryption
 - [ ] Cursor and selection tracking
