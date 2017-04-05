@@ -27,10 +27,12 @@ define(function (require, exports, module) {
 
   var remote = null
   var isSyncing = false
+  var isInCall = false
   var currentEditor = null
   var editorMutexLock = false
   var projectBasePath = null
   var documentRelativePath = null
+  var changeQueue = {}
 
   CommandManager.register('Start MultiHack', START_COMMAND_ID, handleStart)
   CommandManager.register('Stop MultiHack', STOP_COMMAND_ID, handleStop)
@@ -64,6 +66,7 @@ define(function (require, exports, module) {
     fileMenu.addMenuItem(VOICE_LEAVE_COMMAND_ID)
     
     remote.voice.join()
+    isInCall = true
   }
   
   function handleVoiceLeave () {
@@ -71,6 +74,7 @@ define(function (require, exports, module) {
     fileMenu.addMenuItem(VOICE_JOIN_COMMAND_ID)
     
     remote.voice.leave()
+    isInCall = false
   }
 
   function handleStart () {
@@ -110,6 +114,11 @@ define(function (require, exports, module) {
     }
     
     fileMenu.removeMenuItem(STOP_COMMAND_ID)
+    if (isInCall) {
+      fileMenu.removeMenuItem(VOICE_LEAVE_COMMAND_ID)
+    } else {
+      fileMenu.removeMenuItem(VOICE_JOIN_COMMAND_ID)
+    }
     fileMenu.addMenuItem(START_COMMAND_ID)
     isSyncing = false
     
@@ -142,7 +151,20 @@ define(function (require, exports, module) {
   
   function handleLocalDeleteFile (e, fullPath) {
     var relativePath = FileUtils.getRelativeFilename(projectBasePath, fullPath)
+    if (relativePath.slice(-1) === '/') { // Brackets adds a extra '/' to directory paths
+      relativePath = relativePath.slice(0,-1)
+    }
     remote.deleteFile(relativePath)
+  }
+  
+  function pushChangeToDocument (absPath, data) {
+    return DocumentManager.getDocumentForPath(absPath).then(function (doc) {
+      doc.replaceRange(data.change.text, data.change.from, data.change.to)
+      doc.on('deleted', function () {
+        doc.releaseRef()
+      })
+      doc.addRef()
+    })
   }
   
   function handleRemoteChange (data) {
@@ -152,9 +174,43 @@ define(function (require, exports, module) {
       editorMutexLock = false
     } else {
       // TODO: Batch changes
-      DocumentManager.getDocumentForPath(projectBasePath+data.filePath).then(function (doc) {
-        doc.replaceRange(data.change.text, data.change.from, data.change.to)
-        doc.addRef()
+      var absPath = projectBasePath+data.filePath
+      if (changeQueue[absPath]) {
+        changeQueue[absPath].push(data)
+        return
+      }
+
+      // Push change to document (create if missing)
+      pushChangeToDocument(absPath, data).fail(function (err) {
+        changeQueue[absPath] = [data]
+        
+        // Build the path
+        // HACK: Brackets doesn't offer any sort of path-builder. This is less than ideal
+        var split = absPath.split('/')
+        for (var i=1; i < split.length; i++) {
+          var curPath = split.slice(0, -(split.length-i)).join('/')
+          var name = split[i]
+          if (!ProjectManager.isWithinProject(curPath+'/'+name)) continue
+          
+          var isDir = (i === split.length-1 ? false : true)
+          ;(function (curPath, name, isDir) {
+            FileSystem.resolve(curPath+'/'+name, function (err) {
+              console.log(curPath+'/'+name, isDir, err)
+              if (err) {
+                ProjectManager.createNewItem(curPath, name, false, isDir).then(function () {
+                  document.body.click() // HACK: Can't skip renaming
+                  if (!isDir) {
+                    // Empty the queue that built up
+                    while (changeQueue[absPath][0]) {
+                      pushChangeToDocument(absPath, changeQueue[absPath].shift())
+                    }
+                    delete changeQueue[absPath]
+                  }
+                })
+              } 
+            })
+          }(curPath, name, isDir))
+        }
       })
     }
   }
@@ -164,11 +220,10 @@ define(function (require, exports, module) {
     FileSystem.resolve(absPath, function (entry) {
       if (entry && entry.moveToTrash) {
         entry.moveToTrash()
+        ProjectManager.refreshFileTree()
       }
     })
   }
-  
-  // File creation sync is handled by changes being made to non-existent files
   
   function customButton(text, isPrimary) {
     return {
