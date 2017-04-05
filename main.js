@@ -195,9 +195,12 @@ define(function (require, exports, module) {
           var isDir = (i === split.length-1 ? false : true)
           ;(function (curPath, name, isDir) {
             FileSystem.resolve(curPath+'/'+name, function (err) {
-              console.log(curPath+'/'+name, isDir, err)
               if (err) {
-                ProjectManager.createNewItem(curPath, name, false, isDir).then(function () {
+                // HACK: Workaround for adobe/brackets#13267
+                if (isDir) {
+                  name = name + '/'
+                }
+                ProjectManager.createNewItem(curPath, name, true).then(function () {
                   document.body.click() // HACK: Can't skip renaming
                   if (!isDir) {
                     // Empty the queue that built up
