@@ -12,7 +12,7 @@ Also check out [the web version](https://github.com/RationalCoding/multihack-web
 ## Sharing Projects
 Only changes made after joining a room will be synced. To get the same initial code, either use another file sharing service or do **File > Fetch Code** after joining to pull the code from others in the room.  
 
-If others have different sets of code, the peer who joined first will take priority.  
+If peers have different sets of code, the peer who joined first will take priority.  
 
 **Files in your project will be overwritten. This cannot be undone.**  
 
