@@ -7,7 +7,8 @@
   "author": "Thomas Mullen",
   "license": "MIT",
   "scripts": {
-    "test": "standard --fix && tape test/*.js"
+    "test": "standard --fix && tape test/*.js",
+    "build": "git archive --format zip -o multihack-bracket.zip master"
   },
   "engines": {
     "brackets": ">=0.31.0"

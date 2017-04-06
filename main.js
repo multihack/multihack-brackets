@@ -41,7 +41,7 @@ define(function (require, exports, module) {
   CommandManager.register('Stop MultiHack', STOP_COMMAND_ID, handleStop)
   CommandManager.register('Join Voice Call', VOICE_JOIN_COMMAND_ID, handleVoiceJoin)
   CommandManager.register('Leave Voice Call', VOICE_LEAVE_COMMAND_ID, handleVoiceLeave)
-  CommandManager.register('Force Sync', FORCE_SYNC_COMMAND_ID, handleForceSync)
+  CommandManager.register('Fetch Code', FORCE_SYNC_COMMAND_ID, handleForceSync)
 
   function init () {
     setupPreferences()
