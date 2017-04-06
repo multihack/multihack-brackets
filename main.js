@@ -7,7 +7,10 @@ define(function (require, exports, module) {
   var STOP_COMMAND_ID = 'rationalcoding.multihack.stop'
   var VOICE_JOIN_COMMAND_ID = 'rationalcoding.multihack.voicejoin'
   var VOICE_LEAVE_COMMAND_ID = 'rationalcoding.multihack.voiceleave'
+  var FORCE_SYNC_COMMAND_ID = 'rationalcoding.multihack.forcesync'
+  
   var DEFAULT_HOSTNAME = 'https://quiet-shelf-57463.herokuapp.com'
+  var MAX_PUBLIC_SIZE = 20000000 // 20 mb max for public server
   
   var AppInit = brackets.getModule('utils/AppInit')
   var CommandManager = brackets.getModule('command/CommandManager')
@@ -38,6 +41,7 @@ define(function (require, exports, module) {
   CommandManager.register('Stop MultiHack', STOP_COMMAND_ID, handleStop)
   CommandManager.register('Join Voice Call', VOICE_JOIN_COMMAND_ID, handleVoiceJoin)
   CommandManager.register('Leave Voice Call', VOICE_LEAVE_COMMAND_ID, handleVoiceLeave)
+  CommandManager.register('Force Sync', FORCE_SYNC_COMMAND_ID, handleForceSync)
 
   function init () {
     setupPreferences()
@@ -76,6 +80,10 @@ define(function (require, exports, module) {
     remote.voice.leave()
     isInCall = false
   }
+  
+  function handleForceSync () {
+    remote.requestProject()
+  }
 
   function handleStart () {
     Dialogs.showModalDialog(
@@ -97,10 +105,13 @@ define(function (require, exports, module) {
 
       remote.on('change', handleRemoteChange)
       remote.on('deleteFile', handleRemoteDeleteFile)
+      remote.on('provideFile', handleRemoteProvideFile)
+      remote.on('requestProject', handleRemoteRequestProject)
 
       fileMenu.removeMenuItem(START_COMMAND_ID)
       fileMenu.addMenuItem(STOP_COMMAND_ID)
       fileMenu.addMenuItem(VOICE_JOIN_COMMAND_ID)
+      fileMenu.addMenuItem(FORCE_SYNC_COMMAND_ID)
       isSyncing = true
 
       console.log('MH started')
@@ -119,7 +130,9 @@ define(function (require, exports, module) {
     } else {
       fileMenu.removeMenuItem(VOICE_JOIN_COMMAND_ID)
     }
+    fileMenu.removeMenuItem(FORCE_SYNC_COMMAND_ID)
     fileMenu.addMenuItem(START_COMMAND_ID)
+
     isSyncing = false
     
     console.log('MH stopped')
@@ -167,6 +180,34 @@ define(function (require, exports, module) {
     })
   }
   
+  function buildPath (absPath, cb) {
+    // Build the path
+    // HACK: Brackets doesn't offer any sort of path-builder. This is less than ideal
+    var split = absPath.split('/')
+    for (var i=1; i < split.length; i++) {
+      var curPath = split.slice(0, -(split.length-i)).join('/')
+      var name = split[i]
+      if (!ProjectManager.isWithinProject(curPath+'/'+name)) continue
+
+      var isDir = (i === split.length-1 ? false : true)
+      ;(function (curPath, name, isDir) {
+        FileSystem.resolve(curPath+'/'+name, function (err) {
+          if (err) {
+            // HACK: Workaround for adobe/brackets#13267
+            if (isDir) name = name + '/'
+
+            ProjectManager.createNewItem(curPath, name, true).then(function () {
+              document.body.click() // HACK: Can't skip renaming
+              if (!isDir) {
+                cb() // we are done when we reach the file at the end of the path
+              }
+            })
+          } 
+        })
+      }(curPath, name, isDir))
+    }
+  }
+  
   function handleRemoteChange (data) {
     if (data.filePath === documentRelativePath) {
       editorMutexLock = true
@@ -184,36 +225,13 @@ define(function (require, exports, module) {
       pushChangeToDocument(absPath, data).fail(function (err) {
         changeQueue[absPath] = [data]
         
-        // Build the path
-        // HACK: Brackets doesn't offer any sort of path-builder. This is less than ideal
-        var split = absPath.split('/')
-        for (var i=1; i < split.length; i++) {
-          var curPath = split.slice(0, -(split.length-i)).join('/')
-          var name = split[i]
-          if (!ProjectManager.isWithinProject(curPath+'/'+name)) continue
-          
-          var isDir = (i === split.length-1 ? false : true)
-          ;(function (curPath, name, isDir) {
-            FileSystem.resolve(curPath+'/'+name, function (err) {
-              if (err) {
-                // HACK: Workaround for adobe/brackets#13267
-                if (isDir) {
-                  name = name + '/'
-                }
-                ProjectManager.createNewItem(curPath, name, true).then(function () {
-                  document.body.click() // HACK: Can't skip renaming
-                  if (!isDir) {
-                    // Empty the queue that built up
-                    while (changeQueue[absPath][0]) {
-                      pushChangeToDocument(absPath, changeQueue[absPath].shift())
-                    }
-                    delete changeQueue[absPath]
-                  }
-                })
-              } 
-            })
-          }(curPath, name, isDir))
-        }
+        buildPath(absPath, function () {
+          // Empty the queue that built up
+          while (changeQueue[absPath][0]) {
+            pushChangeToDocument(absPath, changeQueue[absPath].shift())
+          }
+          delete changeQueue[absPath]
+        })
       })
     }
   }
@@ -224,6 +242,45 @@ define(function (require, exports, module) {
       if (entry && entry.moveToTrash) {
         entry.moveToTrash()
         ProjectManager.refreshFileTree()
+      }
+    })
+  }
+  
+  function handleRemoteProvideFile (data) {
+    var absPath = projectBasePath+data.filePath
+    buildPath(absPath, function () {
+      // file should now exist
+      console.log(data.num+' of '+data.total)
+    })
+  }
+  
+  function handleRemoteRequestProject (data) {
+    ProjectManager.getAllFiles().then(function (allFiles) {
+      allFiles.sort(function (a, b) {
+        return a.fullPath.length - b.fullPath.length
+      })
+      
+      var isPublicServer = prefs.get('hostname') === DEFAULT_HOSTNAME
+      var overSized = false
+      var size = 0
+      if (isPublicServer && allFiles.length > MAX_PUBLIC_NUMBER)  {
+        return alert('More than 1000 files. Please use a private server.')
+      }
+      for (var i=0; i<allFiles.length; i++) {
+        if (overSized) break
+        ;(function (i) {
+          allFiles[i].read(function (err, contents, stat) {
+            if (err || overSized) return
+            size=size+stat.size  
+            if (isPublicServer && size > MAX_PUBLIC_SIZE) {
+              overSized = true
+              return alert('Project over 20mb. Please use a private server.')
+            }
+            var filePath = FileUtils.getRelativeFilename(projectBasePath, allFiles[i].fullPath)
+            remote.provideFile(filePath, contents, data.requester, i, allFiles.length)
+            console.log('sent '+i+' of '+allFiles.length)
+          })
+        }(i))
       }
     })
   }
