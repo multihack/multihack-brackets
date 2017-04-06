@@ -1,4 +1,6 @@
 # multihack-brackets
+[![Percentage of dyno hours for public server remaining this month](https://img.shields.io/badge/public%20server%20hours-89%25-brightgreen.svg)](#)
+
 Synchronizes code and project structure between multiple users in realtime.  
 Also check out [the web version](https://github.com/RationalCoding/multihack-web). (Now compatible with this extension!)
 
