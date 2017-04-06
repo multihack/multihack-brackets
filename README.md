@@ -9,7 +9,9 @@ Also check out [the web version](https://github.com/RationalCoding/multihack-web
 4. Click **Join Room**. Your code is now being synchronized!  
 5. **File > Stop Multihack** will stop collaboration.  
 
-This extension currently only syncs *changes* and will not realize any code differences on joining a room. Use Git or another version control to make sure you start with the same initial code.
+This extension currently only syncs *changes* and will not realize any code differences that existed before joining a room.  
+To force the extension to pull the code from your peers, do **File > Fetch Code** after joining.  
+If peers have different sets of code, the peer who joined first will take priority.  
 
 ## Voice Calls
 Brackets does not allow microphone access by default. You must launch brackets with:  
