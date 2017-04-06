@@ -29,6 +29,6 @@ You can target a different host through the Brackets option **multihack-brackets
 - [x] Audio calls
 - [ ] Video calls
 - [ ] Text chat
-- [ ] Initial code sync
+- [x] Initial code sync
 - [ ] End-to-end encryption
 - [ ] Cursor and selection tracking
