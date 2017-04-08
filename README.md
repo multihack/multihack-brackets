@@ -1,17 +1,23 @@
 # multihack-brackets
 
 Synchronizes code and project structure between multiple users in realtime.  
+
 Also check out [the web version](https://github.com/RationalCoding/multihack-web). (Now compatible with this extension!)
 
 ## Usage
 1. You and another person with this extension should have the same project open.  
-2. **File > Start Multihack**  
-3. Enter the same secret room ID.    
-4. Click **Join Room**. Your code is now being synchronized!  
-5. **File > Stop Multihack** will stop collaboration.  
+2. Press the sync icon on the right toolbar.  
+3. Enter the same room ID.  
+4. Your code is now being synced!  
+5. Click the sync button again to leave the room, join the voice call, or fetch code.  
 
 ## Sharing Projects
-Only changes made after joining a room will be synced. To get the same initial code, either use another file sharing service or do **File > Fetch Code** after joining to pull the code from others in the room.  
+
+Only changes made after joining a room will be synced. To get the same initial code, either use something like Git.  
+
+You can also click the sync button again and do **Fetch Code**. This is also for if you lose sync.  
+
+*There is a project size limit for "Fetch Code" on the public server, but not on a private one.*  
 
 If peers have different sets of code, the peer who joined first will take priority.  
 
@@ -19,11 +25,14 @@ If peers have different sets of code, the peer who joined first will take priori
 
 ## Voice Calls
 Brackets does not allow microphone access by default. You must launch brackets with:  
+
 `brackets --args --enable-media-stream` if you want to enable voice calls.  
 
 ## Running Your Own Instance
 This extension points to the author's server by default.  
-Please run your own instance of [multihack-server](https://github.com/RationalCoding/multihack-server) if you want lower latency and improved privacy.  
+
+Please run your own instance of [multihack-server](https://github.com/RationalCoding/multihack-server) if you want lower latency, improved privacy, and unlimited fetch sizes.  
+
 You can target a different host through the Brackets option **multihack-brackets.hostname**.
 
 ## Future Features
