@@ -13,9 +13,7 @@ Also check out [the web version](https://github.com/RationalCoding/multihack-web
 
 ## Sharing Projects
 
-Only changes made after joining a room will be synced. To get the same initial code, either use something like Git.  
-
-You can also click the sync button again and do **Fetch Code**. This is also for if you lose sync.  
+**Only changes made after joining a room will be synced.** To get the same initial code, either use something like Git or click the sync button again and do **Fetch Code**. This is also for if you lose sync.  
 
 *There is a project size limit for "Fetch Code" on the public server, but not on a private one.*  
 
