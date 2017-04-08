@@ -1,0 +1,11 @@
+#edc-multihack-btn {
+  background: url('./../img/icon.svg') no-repeat center top transparent
+}
+
+#edc-multihack-btn.active {
+  background: url('./../img/icon-active.svg') no-repeat center top transparent
+}
+
+#edc-multihack-btn.voice {
+  background: url('./../img/icon-voice.svg') no-repeat center top transparent
+}

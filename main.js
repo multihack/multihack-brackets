@@ -3,27 +3,20 @@
 
 define(function (require, exports, module) {
   
-  var START_COMMAND_ID = 'rationalcoding.multihack.start'
-  var STOP_COMMAND_ID = 'rationalcoding.multihack.stop'
-  var VOICE_JOIN_COMMAND_ID = 'rationalcoding.multihack.voicejoin'
-  var VOICE_LEAVE_COMMAND_ID = 'rationalcoding.multihack.voiceleave'
-  var FORCE_SYNC_COMMAND_ID = 'rationalcoding.multihack.forcesync'
-  
   var DEFAULT_HOSTNAME = 'https://quiet-shelf-57463.herokuapp.com'
   var MAX_PUBLIC_SIZE = 20000000 // 20 mb max for public server
+  var MAX_PUBLIC_NUMBER = 500
   
   var AppInit = brackets.getModule('utils/AppInit')
-  var CommandManager = brackets.getModule('command/CommandManager')
-  var Menus = brackets.getModule('command/Menus')
   var PreferencesManager = brackets.getModule('preferences/PreferencesManager')
   var EditorManager = brackets.getModule('editor/EditorManager')
   var DocumentManager = brackets.getModule('document/DocumentManager')
   var ProjectManager = brackets.getModule('project/ProjectManager')
   var FileSystem = brackets.getModule('filesystem/FileSystem')
   var FileUtils = brackets.getModule('file/FileUtils')
-  var Dialogs = brackets.getModule("widgets/Dialogs")
+  var Dialogs = brackets.getModule('widgets/Dialogs')
+  var ExtensionUtils = brackets.getModule('utils/ExtensionUtils')
         
-  var fileMenu = Menus.getMenu(Menus.AppMenuBar.FILE_MENU)
   var prefs = PreferencesManager.getExtensionPrefs('multihack-brackets')
 
   var RemoteManager = require('lib/remote')
@@ -36,26 +29,33 @@ define(function (require, exports, module) {
   var projectBasePath = null
   var documentRelativePath = null
   var changeQueue = {}
-
-  CommandManager.register('Start MultiHack', START_COMMAND_ID, handleStart)
-  CommandManager.register('Stop MultiHack', STOP_COMMAND_ID, handleStop)
-  CommandManager.register('Join Voice Call', VOICE_JOIN_COMMAND_ID, handleVoiceJoin)
-  CommandManager.register('Leave Voice Call', VOICE_LEAVE_COMMAND_ID, handleVoiceLeave)
-  CommandManager.register('Fetch Code', FORCE_SYNC_COMMAND_ID, handleForceSync)
+  
+  ExtensionUtils.loadStyleSheet(module, 'widget/css/main.css')
+  
+  var buttonHTML = require('text!./widget/html/button.html')
+  var modalHTML = require('text!./widget/html/modal.html')
+  var optionsHTML = require('text!./widget/html/optionmodal.html')
+  
+  $('#main-toolbar .buttons').append(buttonHTML)
+  
+  var button = document.querySelector('#edc-multihack-btn')
+  
+  button.addEventListener('click', function () {
+    if (isSyncing) {
+      handleClick()
+    } else {
+      handleStart()
+    }
+  })
 
   function init () {
     setupPreferences()
-    addMenuItem()
     setupEventListeners()
   }
 
   function setupPreferences () {
     prefs.definePreference('hostname', 'string', DEFAULT_HOSTNAME)
     prefs.save()
-  }
-
-  function addMenuItem () {
-    fileMenu.addMenuItem(START_COMMAND_ID)
   }
 
   function setupEventListeners () {
@@ -65,20 +65,15 @@ define(function (require, exports, module) {
     DocumentManager.on('pathDeleted', handleLocalDeleteFile)
   }
   
-  function handleVoiceJoin () {
-    fileMenu.removeMenuItem(VOICE_JOIN_COMMAND_ID)
-    fileMenu.addMenuItem(VOICE_LEAVE_COMMAND_ID)
-    
+  function handleVoiceJoin () {    
     remote.voice.join()
-    isInCall = true
+    // success listener is set in handleStart
   }
   
   function handleVoiceLeave () {
-    fileMenu.removeMenuItem(VOICE_LEAVE_COMMAND_ID)
-    fileMenu.addMenuItem(VOICE_JOIN_COMMAND_ID)
-    
     remote.voice.leave()
     isInCall = false
+    button.className = 'active'
   }
   
   function handleForceSync () {
@@ -89,32 +84,68 @@ define(function (require, exports, module) {
     Dialogs.showModalDialog(
       '', 
       'Multihack', 
-      '<p>Enter the ID for the room you want to join.</p><input id="multihack-room" placeholder="roomID" type="text"></input><p>Make sure all members have the same project before starting.</p>', 
+      modalHTML, 
       [customButton('Join Room', true), customButton('Cancel')]
     )
     var roomInput = document.querySelector('#multihack-room')
     roomInput.value = Math.random().toString(36).substr(2, 20)
     roomInput.select()
     
-    document.querySelector('[data-button-id="multihack-button-JoinRoom"]').addEventListener('click', function () {  
+    document.querySelector('[data-button-id="multihack-button-JoinRoom"]').addEventListener('click', function () {
+      
       var room = roomInput.value
       if (!room) return
       
       projectBasePath = ProjectManager.getProjectRoot().fullPath
       remote = new RemoteManager(prefs.get('hostname'), room)
+      
+      remote.voice.on('join', function () {
+        button.className = 'active voice'
+        isInCall = true
+      })
 
       remote.on('change', handleRemoteChange)
       remote.on('deleteFile', handleRemoteDeleteFile)
       remote.on('provideFile', handleRemoteProvideFile)
       remote.on('requestProject', handleRemoteRequestProject)
 
-      fileMenu.removeMenuItem(START_COMMAND_ID)
-      fileMenu.addMenuItem(STOP_COMMAND_ID)
-      fileMenu.addMenuItem(VOICE_JOIN_COMMAND_ID)
-      fileMenu.addMenuItem(FORCE_SYNC_COMMAND_ID)
       isSyncing = true
+      button.className='active'
 
       console.log('MH started')
+    })
+  }
+  
+  function handleClick () {
+    
+    var callText = isInCall ? 'Leave Call' : 'Join Call'
+
+    Dialogs.showModalDialog(
+      '', 
+      'Multihack', 
+      optionsHTML, 
+      [
+        customButton('Leave Room', true),
+        customButton(callText), 
+        customButton('Fetch Code'), 
+        customButton('Cancel')
+      ]
+    )
+    
+    document.querySelector('[data-button-id="multihack-button-LeaveRoom"]').addEventListener('click', function () {
+      handleStop()
+    })
+    
+    document.querySelector('[data-button-id="multihack-button-'+callText.replace(/\s/g, '')+'"]').addEventListener('click', function () {
+      if (isInCall) {
+        handleVoiceLeave()
+      } else {
+        handleVoiceJoin()
+      }
+    })
+    
+    document.querySelector('[data-button-id="multihack-button-FetchCode"]').addEventListener('click', function () {
+      handleForceSync()
     })
   }
 
@@ -124,16 +155,8 @@ define(function (require, exports, module) {
       remote = null
     }
     
-    fileMenu.removeMenuItem(STOP_COMMAND_ID)
-    if (isInCall) {
-      fileMenu.removeMenuItem(VOICE_LEAVE_COMMAND_ID)
-    } else {
-      fileMenu.removeMenuItem(VOICE_JOIN_COMMAND_ID)
-    }
-    fileMenu.removeMenuItem(FORCE_SYNC_COMMAND_ID)
-    fileMenu.addMenuItem(START_COMMAND_ID)
-
     isSyncing = false
+    button.className=''
     
     console.log('MH stopped')
   }
@@ -264,7 +287,7 @@ define(function (require, exports, module) {
       var overSized = false
       var size = 0
       if (isPublicServer && allFiles.length > MAX_PUBLIC_NUMBER)  {
-        return alert('More than 1000 files. Please use a private server.')
+        return alert('More than 500 files. Please use a private server.')
       }
       for (var i=0; i<allFiles.length; i++) {
         if (overSized) break
