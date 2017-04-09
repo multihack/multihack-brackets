@@ -203,7 +203,7 @@ define(function (require, exports, module) {
     })
   }
   
-  function buildPath (absPath, cb) {
+  function buildPath (absPath, cb) {    
     // Build the path
     // HACK: Brackets doesn't offer any sort of path-builder. This is less than ideal
     var split = absPath.split('/')
@@ -220,12 +220,13 @@ define(function (require, exports, module) {
             if (isDir) name = name + '/'
 
             ProjectManager.createNewItem(curPath, name, true).then(function () {
-              document.body.click() // HACK: Can't skip renaming
               if (!isDir) {
                 cb() // we are done when we reach the file at the end of the path
               }
             })
-          } 
+          } else if (!isDir) {
+            cb()
+          }
         })
       }(curPath, name, isDir))
     }
@@ -274,6 +275,14 @@ define(function (require, exports, module) {
     buildPath(absPath, function () {
       // file should now exist
       console.log(data.num+' of '+data.total)
+
+      DocumentManager.getDocumentForPath(absPath).then(function (doc) {
+        editorMutexLock = true
+        doc.file.write(data.content)
+        doc.refreshText(data.content)
+        ProjectManager.refreshFileTree()      
+        editorMutexLock = false
+      })
     })
   }
   
