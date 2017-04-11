@@ -13,13 +13,11 @@ Also check out [the web version](https://github.com/RationalCoding/multihack-web
 
 ## Sharing Projects
 
-**Only changes made after joining a room will be synced.** To get the same initial code, either use something like Git or click the sync button again and do **Fetch Code**. This is also for if you lose sync.  
-
-*There is a project size limit for "Fetch Code" on the public server, but not on a private one.*  
+**Only changes made after joining a room will be synced.** To get the same initial code, click **Fetch Code** and your entire project will be sent.  
 
 If peers have different sets of code, the peer who joined first will take priority.  
 
-**Files in your project will be overwritten. This cannot be undone.**  
+**Files in your project will be overwritten! Make a backup!**  
 
 ## Voice Calls
 Brackets does not allow microphone access by default. You must launch brackets with:  
@@ -27,9 +25,9 @@ Brackets does not allow microphone access by default. You must launch brackets w
 `brackets --args --enable-media-stream` if you want to enable voice calls.  
 
 ## Running Your Own Instance
-This extension points to the author's server by default.  
+This extension points to the author's server by default. No code is sent through the server.  
 
-Please run your own instance of [multihack-server](https://github.com/RationalCoding/multihack-server) if you want lower latency, improved privacy, and unlimited fetch sizes.  
+If you want your own instance, see [multihack-server](https://github.com/RationalCoding/multihack-server).
 
 You can target a different host through the Brackets option **multihack-brackets.hostname**.
 
