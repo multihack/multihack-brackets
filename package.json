@@ -16,9 +16,5 @@
   "devDependencies": {
     "standard": "^9.0.0",
     "tape": "^4.6.3"
-  },
-  "dependencies": {
-    "multihack-wire": "^1.1.0",
-    "simple-signal-client": "^1.2.6"
   }
 }
