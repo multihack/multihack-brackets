@@ -33,10 +33,16 @@ Please run your own instance of [multihack-server](https://github.com/RationalCo
 
 You can target a different host through the Brackets option **multihack-brackets.hostname**.
 
+## Introducing version 3.0!
+
+- Network has changed from server forwarding to 100% peer-to-peer! Blazing fast speeds (especially over LANs), and unlimited project sizes!
+
+- General performance and quality improvements.
+
 ## Future Features
 - [x] Integration with web version
 - [ ] Integration with future versions on Atom and VSCode
-- [ ] Switch from server forwarding to P2P
+- [x] Switch from server forwarding to P2P
 - [x] Audio calls
 - [ ] Video calls
 - [ ] Text chat
