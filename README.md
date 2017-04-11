@@ -35,6 +35,8 @@ You can target a different host through the Brackets option **multihack-brackets
 
 - Network has changed from server forwarding to 100% peer-to-peer! Blazing fast speeds (especially over LANs), and unlimited project sizes!
 
+- Check out [the new protocol](https://github.com/RationalCoding/multihack-wire) if you're wondering why it's so much faster!
+
 - General performance and quality improvements.
 
 ## Future Features
