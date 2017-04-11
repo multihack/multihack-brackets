@@ -4,8 +4,6 @@
 define(function (require, exports, module) {
   
   var DEFAULT_HOSTNAME = 'https://quiet-shelf-57463.herokuapp.com'
-  var MAX_PUBLIC_SIZE = 20000000 // 20 mb max for public server
-  var MAX_PUBLIC_NUMBER = 500
   
   var AppInit = brackets.getModule('utils/AppInit')
   var PreferencesManager = brackets.getModule('preferences/PreferencesManager')
@@ -274,7 +272,6 @@ define(function (require, exports, module) {
     var absPath = projectBasePath+data.filePath
     buildPath(absPath, function () {
       // file should now exist
-      console.log(data.num+' of '+data.total)
 
       DocumentManager.getDocumentForPath(absPath).then(function (doc) {
         editorMutexLock = true
@@ -286,30 +283,19 @@ define(function (require, exports, module) {
     })
   }
   
-  function handleRemoteRequestProject (data) {
+  function handleRemoteRequestProject (requester) {
     ProjectManager.getAllFiles().then(function (allFiles) {
       allFiles.sort(function (a, b) {
         return a.fullPath.length - b.fullPath.length
       })
       
-      var isPublicServer = prefs.get('hostname') === DEFAULT_HOSTNAME
-      var overSized = false
-      var size = 0
-      if (isPublicServer && allFiles.length > MAX_PUBLIC_NUMBER)  {
-        return alert('More than 500 files. Please use a private server.')
-      }
       for (var i=0; i<allFiles.length; i++) {
-        if (overSized) break
         ;(function (i) {
           allFiles[i].read(function (err, contents, stat) {
-            if (err || overSized) return
-            size=size+stat.size  
-            if (isPublicServer && size > MAX_PUBLIC_SIZE) {
-              overSized = true
-              return alert('Project over 20mb. Please use a private server.')
-            }
+            if (err) return
+            
             var filePath = FileUtils.getRelativeFilename(projectBasePath, allFiles[i].fullPath)
-            remote.provideFile(filePath, contents, data.requester, i, allFiles.length)
+            remote.provideFile(filePath, contents, requester)
             console.log('sent '+i+' of '+allFiles.length)
           })
         }(i))
