@@ -18,6 +18,7 @@ define(function (require, exports, module) {
   var prefs = PreferencesManager.getExtensionPrefs('multihack-brackets')
 
   var RemoteManager = require('lib/remote')
+  var PeerGraph = require('lib/p2p-graph')
 
   var remote = null
   var isSyncing = false
@@ -27,6 +28,7 @@ define(function (require, exports, module) {
   var projectBasePath = null
   var documentRelativePath = null
   var changeQueue = {}
+  var nickname = null
   
   ExtensionUtils.loadStyleSheet(module, 'widget/css/main.css')
   
@@ -89,10 +91,13 @@ define(function (require, exports, module) {
     roomInput.value = Math.random().toString(36).substr(2, 20)
     roomInput.select()
     
+    var nicknameInput = document.querySelector('#multihack-nickname')
+    
     document.querySelector('[data-button-id="multihack-button-JoinRoom"]').addEventListener('click', function () {
       
       var room = roomInput.value
       if (!room) return
+      nickname = nicknameInput.value || 'Guest'
       
       projectBasePath = ProjectManager.getProjectRoot().fullPath
       remote = new RemoteManager(prefs.get('hostname'), room)
@@ -106,6 +111,7 @@ define(function (require, exports, module) {
       remote.on('deleteFile', handleRemoteDeleteFile)
       remote.on('provideFile', handleRemoteProvideFile)
       remote.on('requestProject', handleRemoteRequestProject)
+      remote.on('lostPeer', handleLostPeer)
 
       isSyncing = true
       button.className='active'
@@ -130,11 +136,34 @@ define(function (require, exports, module) {
       ]
     )
     
+    var el = document.querySelector('#multihack-network')
+    el.style.overflow = 'hidden'
+    el.style.maxHeight = '300px'
+    el.style.transform = 'translateY(-60px)'
+    var graph = new PeerGraph(el)
+
+    graph.add({
+      id: 'Me',
+      me: true,
+      name: 'You'
+    })
+
+    for (var i=0; i<remote.peers.length;i++){
+      graph.add({
+        id: remote.peers[i].id,
+        me:false,
+        name: remote.peers[i].metadata.nickname
+      })
+      graph.connect('Me', remote.peers[i].id)
+    }
+    
     document.querySelector('[data-button-id="multihack-button-LeaveRoom"]').addEventListener('click', function () {
+      graph.destroy()
       handleStop()
     })
     
     document.querySelector('[data-button-id="multihack-button-'+callText.replace(/\s/g, '')+'"]').addEventListener('click', function () {
+      graph.destroy()
       if (isInCall) {
         handleVoiceLeave()
       } else {
@@ -143,7 +172,12 @@ define(function (require, exports, module) {
     })
     
     document.querySelector('[data-button-id="multihack-button-FetchCode"]').addEventListener('click', function () {
+      graph.destroy()
       handleForceSync()
+    })
+    
+    document.querySelector('[data-button-id="multihack-button-Cancel"]').addEventListener('click', function () {
+      graph.destroy()
     })
   }
 
@@ -256,6 +290,15 @@ define(function (require, exports, module) {
         })
       })
     }
+  }
+  
+  function handleLostPeer(peer) {
+    Dialogs.showModalDialog(
+      '', 
+      'Multihack', 
+      '<p>Your connection to "'+peer.metadata.nickname+'" was lost.</p>', 
+      [customButton('Ok')]
+    )
   }
   
   function handleRemoteDeleteFile (data) {

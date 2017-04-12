@@ -9,3 +9,8 @@
 #edc-multihack-btn.voice {
   background: url('./../img/icon-voice.svg') no-repeat center top transparent
 }
+
+#multihack-network .text {
+  fill: white !important;
+  transform: translateX(-12px)
+}
