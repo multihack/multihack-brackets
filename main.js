@@ -4,6 +4,7 @@
 define(function (require, exports, module) {
   
   var DEFAULT_HOSTNAME = 'https://quiet-shelf-57463.herokuapp.com'
+  var MAX_FORWARDING_SIZE = 5*1000*1000 // max 5mb for non-p2p (validated by server)
   
   var AppInit = brackets.getModule('utils/AppInit')
   var PreferencesManager = brackets.getModule('preferences/PreferencesManager')
@@ -48,7 +49,10 @@ define(function (require, exports, module) {
     }
   })
 
+  var inited = false // Brackets sometimes tries to init multiple times
   function init () {
+    if (inited) return
+    inited = true
     setupPreferences()
     setupEventListeners()
   }
@@ -66,11 +70,14 @@ define(function (require, exports, module) {
   }
   
   function handleVoiceJoin () {    
+    if (!remove.voice) return
     remote.voice.join()
     // success listener is set in handleStart
   }
   
+  
   function handleVoiceLeave () {
+    if (!remove.voice) return
     remote.voice.leave()
     isInCall = false
     button.className = 'active'
@@ -100,14 +107,16 @@ define(function (require, exports, module) {
       nickname = nicknameInput.value || 'Guest'
       
       projectBasePath = ProjectManager.getProjectRoot().fullPath
-      remote = new RemoteManager(prefs.get('hostname'), room)
+      remote = new RemoteManager(prefs.get('hostname'), room, nickname)
       
-      remote.voice.on('join', function () {
-        button.className = 'active voice'
-        isInCall = true
-      })
+      if (remote.voice) {
+        remote.voice.on('join', function () {
+          button.className = 'active voice'
+          isInCall = true
+        })
+      }
 
-      remote.on('change', handleRemoteChange)
+      remote.on('changeFile', handleRemoteChange)
       remote.on('deleteFile', handleRemoteDeleteFile)
       remote.on('provideFile', handleRemoteProvideFile)
       remote.on('requestProject', handleRemoteRequestProject)
@@ -147,14 +156,29 @@ define(function (require, exports, module) {
       me: true,
       name: 'You'
     })
-
+    
+    var proxyID = remote.nop2p ? 'Server' : 'Me'
+    
+    if (remote.mustForward || remote.nop2p) {
+      graph.add({
+        id: 'Server',
+        me: false,
+        name: 'Server'
+      })
+      graph.connect('Server', 'Me')
+    }
+    
     for (var i=0; i<remote.peers.length;i++){
       graph.add({
         id: remote.peers[i].id,
-        me:false,
+        me: false,
         name: remote.peers[i].metadata.nickname
       })
-      graph.connect('Me', remote.peers[i].id)
+      if (remote.peers[i].nop2p) {
+        graph.connect('Server', remote.peers[i].id)
+      } else {
+        graph.connect(proxyID, remote.peers[i].id)
+      }
     }
     
     document.querySelector('[data-button-id="multihack-button-LeaveRoom"]').addEventListener('click', function () {
@@ -214,7 +238,7 @@ define(function (require, exports, module) {
         return
       }
     }
-    remote.change(documentRelativePath, change) // Send change to remote peers
+    remote.changeFile(toWebPath(documentRelativePath), change) // Send change to remote peers
   }
   
   function handleLocalDeleteFile (e, fullPath) {
@@ -222,16 +246,15 @@ define(function (require, exports, module) {
     if (relativePath.slice(-1) === '/') { // Brackets adds a extra '/' to directory paths
       relativePath = relativePath.slice(0,-1)
     }
-    remote.deleteFile(relativePath)
+    remote.deleteFile(toWebPath(relativePath))
+    ProjectManager.refreshFileTree()
   }
   
   function pushChangeToDocument (absPath, data) {
     return DocumentManager.getDocumentForPath(absPath).then(function (doc) {
+      editorMutexLock = true
       doc.replaceRange(data.change.text, data.change.from, data.change.to)
-      doc.on('deleted', function () {
-        doc.releaseRef()
-      })
-      doc.addRef()
+      editorMutexLock = false
     })
   }
   
@@ -253,10 +276,12 @@ define(function (require, exports, module) {
 
             ProjectManager.createNewItem(curPath, name, true).then(function () {
               if (!isDir) {
+                ProjectManager.refreshFileTree()
                 cb() // we are done when we reach the file at the end of the path
               }
             })
           } else if (!isDir) {
+            ProjectManager.refreshFileTree()
             cb()
           }
         })
@@ -271,7 +296,7 @@ define(function (require, exports, module) {
       editorMutexLock = false
     } else {
       // TODO: Batch changes
-      var absPath = projectBasePath+data.filePath
+      var absPath = projectBasePath+fromWebPath(data.filePath)
       if (changeQueue[absPath]) {
         changeQueue[absPath].push(data)
         return
@@ -302,17 +327,18 @@ define(function (require, exports, module) {
   }
   
   function handleRemoteDeleteFile (data) {
-    var absPath = projectBasePath+data.filePath
-    FileSystem.resolve(absPath, function (entry) {
+    var absPath = projectBasePath+fromWebPath(data.filePath)
+    FileSystem.resolve(absPath, function (err, entry) {
       if (entry && entry.moveToTrash) {
         entry.moveToTrash()
         ProjectManager.refreshFileTree()
+        console.log(absPath+' moved to trash')
       }
     })
   }
   
   function handleRemoteProvideFile (data) {
-    var absPath = projectBasePath+data.filePath
+    var absPath = projectBasePath+fromWebPath(data.filePath)
     buildPath(absPath, function () {
       // file should now exist
 
@@ -332,18 +358,31 @@ define(function (require, exports, module) {
         return a.fullPath.length - b.fullPath.length
       })
       
+      var size = 0
       for (var i=0; i<allFiles.length; i++) {
         ;(function (i) {
           allFiles[i].read(function (err, contents, stat) {
             if (err) return
+            size+=contents.length
+            if (size > MAX_FORWARDING_SIZE && remote.hostname === DEFAULT_HOSTNAME) {
+              return alert('Project too large! Use a P2P connection.')
+            }
             
             var filePath = FileUtils.getRelativeFilename(projectBasePath, allFiles[i].fullPath)
-            remote.provideFile(filePath, contents, requester)
+            remote.provideFile(toWebPath(filePath), contents, requester)
             console.log('sent '+i+' of '+allFiles.length)
           })
         }(i))
       }
     })
+  }
+  
+  function toWebPath (path) {
+    return path[0] === '/' ? path : '/'+path
+  }
+  
+  function fromWebPath (path) {
+    return path[0] === '/' ? path.slice(1) : path
   }
   
   function customButton(text, isPrimary) {
