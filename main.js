@@ -70,14 +70,14 @@ define(function (require, exports, module) {
   }
   
   function handleVoiceJoin () {    
-    if (!remove.voice) return
+    if (!remote.voice) return
     remote.voice.join()
     // success listener is set in handleStart
   }
   
   
   function handleVoiceLeave () {
-    if (!remove.voice) return
+    if (!remote.voice) return
     remote.voice.leave()
     isInCall = false
     button.className = 'active'
