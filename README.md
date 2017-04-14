@@ -38,12 +38,3 @@ You can target a different host through the Brackets option **multihack-brackets
 - Check out [the new protocol](https://github.com/RationalCoding/multihack-wire) if you're wondering why it's so much faster!
 
 - General performance and quality improvements.
-
-## Future Features
-- [x] Integration with web version
-- [ ] Integration with future versions on Atom and VSCode
-- [x] Switch from server forwarding to P2P
-- [x] Audio calls
-- [x] Initial code sync
-- [ ] End-to-end encryption (currently, encryption is facilitated by server)
-- [ ] Cursor and selection tracking
