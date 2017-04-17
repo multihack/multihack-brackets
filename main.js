@@ -67,6 +67,7 @@ define(function (require, exports, module) {
     ProjectManager.on('projectOpen', handleStop) // Stop sync on project open
     EditorManager.on('activeEditorChange', handleEditorChange)
     DocumentManager.on('pathDeleted', handleLocalDeleteFile)
+    FileSystem.on('rename', handleLocalRename)
   }
   
   function handleVoiceJoin () {    
@@ -218,6 +219,7 @@ define(function (require, exports, module) {
   }
 
   function handleEditorChange ($event, newEditor, oldEditor) {
+    
     if (oldEditor) {
       oldEditor._codeMirror.off('change', sendLocalChange)
     }
@@ -242,6 +244,8 @@ define(function (require, exports, module) {
   }
   
   function handleLocalDeleteFile (e, fullPath) {
+    if (!isSyncing) return
+    
     var relativePath = FileUtils.getRelativeFilename(projectBasePath, fullPath)
     if (relativePath.slice(-1) === '/') { // Brackets adds a extra '/' to directory paths
       relativePath = relativePath.slice(0,-1)
@@ -289,7 +293,58 @@ define(function (require, exports, module) {
     }
   }
   
+  function handleLocalRename (e, oldPath, newPath) {
+    if (!isSyncing) return
+    
+    console.log(oldPath, newPath)
+    
+    var oldFilePath = FileUtils.getRelativeFilename(projectBasePath, oldPath)
+    var newFilePath = FileUtils.getRelativeFilename(projectBasePath, newPath)
+    
+    if (oldFilePath === documentRelativePath) {
+      documentRelativePath = newFilePath
+    }
+    
+    var changeObj = {
+      type: 'rename', 
+      newPath: toWebPath(newFilePath)
+    }
+
+    remote.changeFile(toWebPath(oldFilePath), changeObj)
+  }
+  
+  function handleRemoteRename (data) {
+    console.log(data)
+    var absPath = projectBasePath+fromWebPath(data.filePath)
+    
+    FileSystem.resolve(absPath, function (err, file) {
+      console.log(err, file)
+      file.read(function (err, contents) {
+        console.log(err, contents)
+        handleRemoteChange({
+          filePath: data.change.newPath,
+          change: {
+            from: {ch:0, line:0},
+            to: {ch:0, line:0},
+            text: contents,
+            origin: 'paste'
+          }
+        })
+        handleRemoteDeleteFile({
+          filePath: data.filePath
+        })
+      })
+    })
+  }
+  
   function handleRemoteChange (data) {
+    console.log(data.change)
+    
+    if (data.change.type === 'rename') {
+      handleRemoteRename(data)
+      return
+    }
+    
     if (data.filePath === documentRelativePath) {
       editorMutexLock = true
       currentEditor._codeMirror.replaceRange(data.change.text, data.change.from, data.change.to)
@@ -318,6 +373,8 @@ define(function (require, exports, module) {
   }
   
   function handleLostPeer(peer) {
+    if (!isSyncing) return
+    
     Dialogs.showModalDialog(
       '', 
       'Multihack', 
