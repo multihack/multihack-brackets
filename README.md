@@ -25,7 +25,7 @@ Brackets does not allow microphone access by default. You must launch brackets w
 `brackets --args --enable-media-stream` if you want to enable voice calls.  
 
 ## Running Your Own Instance
-This extension points to the author's server by default. No code is sent through the server.  
+This extension points to the author's server by default. No code is sent through the server as long as your version of Brackets supports WebRTC (which most do). 
 
 If you want your own instance, see [multihack-server](https://github.com/RationalCoding/multihack-server).
 
