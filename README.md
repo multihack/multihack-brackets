@@ -2,6 +2,8 @@
 
 Synchronizes code and project structure between multiple users in realtime.  
 
+**Still in active development. Fully working, but expect constant updates.**
+
 Also check out [the web version](https://github.com/RationalCoding/multihack-web). (Now compatible with this extension!)
 
 ## Usage
