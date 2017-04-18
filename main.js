@@ -222,13 +222,35 @@ define(function (require, exports, module) {
     
     if (oldEditor) {
       oldEditor._codeMirror.off('change', sendLocalChange)
+      oldEditor._codeMirror.off('beforeSelectionChange', sendLocalSelect)
     }
 
     if (newEditor) {
       currentEditor = newEditor
       documentRelativePath = FileUtils.getRelativeFilename(projectBasePath, newEditor.document.file.fullPath)
       newEditor._codeMirror.on('change', sendLocalChange)
+      newEditor._codeMirror.on('beforeSelectionChange', sendLocalSelect)
     }
+  }
+  
+  function sendLocalSelect (cm, change) {
+    var ranges = change.ranges.filter(function (range) {
+      return range.head.ch !== range.anchor.ch || range.head.line !== range.anchor.line
+    }).map(function (range) {
+      if (range.head.line > range.anchor.line || (
+        range.head.line === range.anchor.line && range.head.ch > range.anchor.ch
+      )) {
+        var temp = range.head
+        range.head = range.anchor
+        range.anchor = temp
+      }
+      return range
+    })
+    
+    sendLocalChange(cm, {
+      type: 'selection',
+      ranges: ranges
+    })
   }
   
   function sendLocalChange (cm, change) {
@@ -337,15 +359,31 @@ define(function (require, exports, module) {
     })
   }
   
-  function handleRemoteChange (data) {
-    console.log(data.change)
+  function handleRemoteSelect (data) {
+    if (fromWebPath(data.filePath) !== documentRelativePath) return
     
+    currentEditor._codeMirror.getAllMarks().forEach(function (mark) {
+      mark.clear()
+    })
+
+    data.change.ranges.forEach(function (range) {
+      console.log(range)
+      currentEditor._codeMirror.markText(range.head, range.anchor, {
+        className: 'remoteSelection'
+      })
+    })
+  }
+  
+  function handleRemoteChange (data) {    
     if (data.change.type === 'rename') {
       handleRemoteRename(data)
       return
+    } else if (data.change.type === 'selection') {
+      handleRemoteSelect(data)
+      return
     }
     
-    if (data.filePath === documentRelativePath) {
+    if (fromWebPath(data.filePath) === documentRelativePath) {
       editorMutexLock = true
       currentEditor._codeMirror.replaceRange(data.change.text, data.change.from, data.change.to)
       editorMutexLock = false

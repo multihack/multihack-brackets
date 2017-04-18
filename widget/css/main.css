@@ -14,3 +14,7 @@
   fill: white !important;
   transform: translateX(-12px)
 }
+
+.remoteSelection {
+  background-color: #3f5d38;
+}
