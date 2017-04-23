@@ -7,10 +7,11 @@ Synchronizes code and project structure between multiple users in realtime.
 Also check out [the web version](https://github.com/RationalCoding/multihack-web). (Now compatible with this extension!)
 
 ## Usage 
-1. Press the sync icon on the right toolbar.  
-2. Enter the same room ID.  
-3. Your code is now being synced!  
-4. Click the sync button again to leave the room, join the voice call, or fetch code.  
+1. Open the folder containing your project.
+2. Press the sync icon on the right toolbar.  
+3. Enter the same room ID.  
+4. Your code is now being synced!  
+5. Click the sync button again to leave the room, join the voice call, or fetch code.  
 
 **Files in your project will be overwritten! Make a backup!**  
 
