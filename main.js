@@ -123,7 +123,10 @@ define(function (require, exports, module) {
       remote.on('provideFile', handleRemoteProvideFile)
       remote.on('requestProject', handleRemoteRequestProject)
       remote.on('lostPeer', handleLostPeer)
-      remote.once('gotPeer', function () {
+      var requestOnce = true
+      remote.on('gotPeer', function () {
+        if (!requestOnce) return
+        requestOnce = false
         remote.requestProject()
       })
 
