@@ -19,8 +19,8 @@ define(function (require, exports, module) {
         
   var prefs = PreferencesManager.getExtensionPrefs('multihack-brackets')
 
-  var RemoteManager = require('lib/remote')
-  var PeerGraph = require('lib/p2p-graph')
+  var RemoteManager = require('./lib/remote')
+  var PeerGraph = require('./lib/npm/p2p-graph')
 
   var remote = null
   var isSyncing = false
