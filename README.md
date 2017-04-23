@@ -6,25 +6,25 @@ Synchronizes code and project structure between multiple users in realtime.
 
 Also check out [the web version](https://github.com/RationalCoding/multihack-web). (Now compatible with this extension!)
 
-## Usage
-1. You and another person with this extension should have the same project open.  
-2. Press the sync icon on the right toolbar.  
-3. Enter the same room ID.  
-4. Your code is now being synced!  
-5. Click the sync button again to leave the room, join the voice call, or fetch code.  
-
-## Sharing Projects
-
-**Only changes made after joining a room will be synced.** To get the same initial code, click **Fetch Code** and your entire project will be sent.  
-
-If peers have different sets of code, the peer who joined first will take priority.  
+## Usage 
+1. Press the sync icon on the right toolbar.  
+2. Enter the same room ID.  
+3. Your code is now being synced!  
+4. Click the sync button again to leave the room, join the voice call, or fetch code.  
 
 **Files in your project will be overwritten! Make a backup!**  
 
 ## Voice Calls
+
 Brackets does not allow microphone access by default. You must launch brackets with:  
 
 `brackets --args --enable-media-stream` if you want to enable voice calls.  
+
+## Fetch Code
+
+If someone joins the room with new code, it will not be watched and therefore not synced.  
+
+To get unwatched code or force a sync, press "Fetch Code" on the side that doesn't have the new code.
 
 ## Running Your Own Instance
 This extension points to the author's server by default. No code is sent through the server as long as your version of Brackets supports WebRTC (which most do). 
