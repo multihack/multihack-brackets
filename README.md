@@ -25,7 +25,7 @@ Brackets does not allow microphone access by default. You must launch brackets w
 
 If someone joins the room with new code, it will not be watched and therefore not synced.  
 
-To get unwatched code or force a sync, press "Fetch Code" on the side that doesn't have the new code.
+To get unwatched code or force a sync, press "Fetch Code" on the side that doesn't have the correct code.
 
 ## Running Your Own Instance
 This extension points to the author's server by default. No code is sent through the server as long as your version of Brackets supports WebRTC (which most do). 
