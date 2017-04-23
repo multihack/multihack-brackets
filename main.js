@@ -122,6 +122,9 @@ define(function (require, exports, module) {
       remote.on('provideFile', handleRemoteProvideFile)
       remote.on('requestProject', handleRemoteRequestProject)
       remote.on('lostPeer', handleLostPeer)
+      remote.once('gotPeer', function () {
+        remote.requestProject()
+      })
 
       isSyncing = true
       button.className='active'
