@@ -5,6 +5,7 @@ define(function (require, exports, module) {
   
   var DEFAULT_HOSTNAME = 'https://quiet-shelf-57463.herokuapp.com'
   var MAX_FORWARDING_SIZE = 5*1000*1000 // max 5mb for non-p2p (validated by server)
+  var FILE_BLACKLIST = ['node_modules', '.DS_Store', '.git'] // blacklist for paths that will not be requested
   
   var AppInit = brackets.getModule('utils/AppInit')
   var PreferencesManager = brackets.getModule('preferences/PreferencesManager')
@@ -455,6 +456,9 @@ define(function (require, exports, module) {
     ProjectManager.getAllFiles().then(function (allFiles) {
       allFiles.sort(function (a, b) {
         return a.fullPath.length - b.fullPath.length
+      })
+      allFiles.filter(function (a) {
+        return a.fullPath.indexOf(FILE_BLACKLIST) === -1
       })
       
       var size = 0
