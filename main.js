@@ -16,6 +16,7 @@ define(function (require, exports, module) {
   var FileUtils = brackets.getModule('file/FileUtils')
   var Dialogs = brackets.getModule('widgets/Dialogs')
   var ExtensionUtils = brackets.getModule('utils/ExtensionUtils')
+  var Mustache = brackets.getModule("thirdparty/mustache/mustache") 
         
   var prefs = PreferencesManager.getExtensionPrefs('multihack-brackets')
 
@@ -31,6 +32,8 @@ define(function (require, exports, module) {
   var documentRelativePath = null
   var changeQueue = {}
   var nickname = null
+  var knownDocs = {}
+  var room
   
   ExtensionUtils.loadStyleSheet(module, 'widget/css/main.css')
   
@@ -104,7 +107,7 @@ define(function (require, exports, module) {
     
     document.querySelector('[data-button-id="multihack-button-JoinRoom"]').addEventListener('click', function () {
       
-      var room = roomInput.value
+      room = roomInput.value
       if (!room) return
       nickname = nicknameInput.value || 'Guest'
       
@@ -144,7 +147,7 @@ define(function (require, exports, module) {
     Dialogs.showModalDialog(
       '', 
       'Multihack', 
-      optionsHTML, 
+      Mustache.render(optionsHTML, {room: room}), 
       [
         customButton('Leave Room', true),
         customButton(callText), 
@@ -218,6 +221,7 @@ define(function (require, exports, module) {
       remote.destroy()
       remote = null
     }
+    knownDocs = {}
     
     isSyncing = false
     button.className=''
@@ -237,6 +241,16 @@ define(function (require, exports, module) {
       documentRelativePath = FileUtils.getRelativeFilename(projectBasePath, newEditor.document.file.fullPath)
       newEditor._codeMirror.on('change', sendLocalChange)
       newEditor._codeMirror.on('beforeSelectionChange', sendLocalSelect)
+      
+      if (isSyncing && documentRelativePath && !knownDocs[toWebPath(documentRelativePath)]) {
+        knownDocs[toWebPath(documentRelativePath)] = true
+        remote.changeFile(toWebPath(documentRelativePath), {
+          from: {line: 0, ch: Number.MAX_SAFE_INTEGER},
+          to: { line: Number.MAX_SAFE_INTEGER, ch: Number.MAX_SAFE_INTEGER},
+          text: newEditor._codeMirror.getValue(),
+          origin: 'paste'
+        })
+      }
     }
   }
   
@@ -441,6 +455,7 @@ define(function (require, exports, module) {
   }
   
   function handleRemoteProvideFile (data) {
+    knownDocs[data.filePath] = true
     var absPath = projectBasePath+fromWebPath(data.filePath)
     buildPath(absPath, function () {
       // file should now exist
@@ -475,6 +490,7 @@ define(function (require, exports, module) {
             }
             
             var filePath = FileUtils.getRelativeFilename(projectBasePath, allFiles[i].fullPath)
+            knownDocs[toWebPath(filePath)] = true
             remote.provideFile(toWebPath(filePath), contents, requester)
             console.log('sent '+i+' of '+allFiles.length)
           })

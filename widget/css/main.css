@@ -12,7 +12,19 @@
 
 #multihack-network .text {
   fill: white !important;
-  transform: translateX(-12px)
+  transform: translateX(-12px);
+}
+
+#multihack-network {
+  position: relative;
+  bottom: 30px;
+}
+
+
+#multihack-network-container { 
+  height: 220px;
+  overflow: hidden;
+  position: relative;
 }
 
 .remoteSelection {
