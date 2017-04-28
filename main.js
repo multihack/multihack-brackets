@@ -1,50 +1,41 @@
 /* jslint vars: true, plusplus: true, devel: true, nomen: true, regexp: true, indent: 4, maxerr: 50 */
-/* global define, $, brackets, window, Mustache */
+/* global define, brackets, window */
 
 define(function (require, exports, module) {
-  
   var DEFAULT_HOSTNAME = 'https://quiet-shelf-57463.herokuapp.com'
-  var FILE_BLACKLIST = ['node_modules'] // blacklist for paths that will not be synced
-  
+
   var AppInit = brackets.getModule('utils/AppInit')
   var PreferencesManager = brackets.getModule('preferences/PreferencesManager')
   var EditorManager = brackets.getModule('editor/EditorManager')
   var DocumentManager = brackets.getModule('document/DocumentManager')
   var ProjectManager = brackets.getModule('project/ProjectManager')
-  var FileUtils = brackets.getModule('file/FileUtils')
-  var Dialogs = brackets.getModule('widgets/Dialogs')
   var ExtensionUtils = brackets.getModule('utils/ExtensionUtils')
-  var Mustache = brackets.getModule("thirdparty/mustache/mustache") 
-        
+
   var prefs = PreferencesManager.getExtensionPrefs('multihack-brackets')
 
   var RemoteManager = require('./lib/npm/multihack-core')
   var EditorWrapper = require('./lib/editor')
   var FileSystemWrapper = require('./lib/filesystem')
   var UI = require('./lib/ui')
-  var PeerGraph = require('./lib/npm/p2p-graph')
   var Voice = require('./lib/voice')
 
   var remote = null
-  var room = null
-  var nickname = null
-  
+
   var isSyncing = false
   var isInCall = false
-  
+
   var currentEditor = null
-  var muteNextEvent = false
-  var ignoreNextChange = false
-  
+
   var projectBasePath = null
   var documentRelativePath = null
-  
+
   ExtensionUtils.loadStyleSheet(module, 'widget/css/main.css')
-  
+
   UI.injectButton()
-  
+  UI.on('voiceToggle', handleVoiceToggle)
+
   var button = document.querySelector('#edc-multihack-btn')
-  
+
   button.addEventListener('click', function () {
     if (isSyncing) {
       UI.openModal()
@@ -67,20 +58,27 @@ define(function (require, exports, module) {
   }
 
   function setupEventListeners () {
-    // FileSystemWrapper.on('createFile', handleLocalDeleteFile)
-    // FileSystemWrapper.on('renameFile', handleLocalDeleteFile)
+    FileSystemWrapper.on('createFile', handleLocalCreateFile)
+    FileSystemWrapper.on('renameFile', handleLocalDeleteFile)
     FileSystemWrapper.on('deleteFile', handleLocalDeleteFile)
     EditorWrapper.on('changeFile', handleLocalChangeFile)
     EditorManager.on('changeSelection', handleLocalSelection)
     ProjectManager.on('projectOpen', handleStop) // Stop sync on project open
   }
-  
-  function handleVoiceJoin () {    
+
+  function handleVoiceToggle () {
+    if (isInCall) {
+      handleVoiceLeave()
+    } else {
+      handleVoiceJoin()
+    }
+  }
+
+  function handleVoiceJoin () {
     if (!remote.voice) return
     remote.voice.join()
   }
-  
-  
+
   function handleVoiceLeave () {
     if (!remote.voice) return
     remote.voice.leave()
@@ -88,13 +86,13 @@ define(function (require, exports, module) {
     button.className = 'active'
   }
 
-  function handleStart () {    
+  function handleStart () {
     UI.getRoomAndNickname(function (room, nickname) {
       if (!room) return
-      
+
       remote = new RemoteManager({
-        hostname: 'http://localhost:6011', // TODO: prefs.get('hostname'), 
-        room: room, 
+        hostname: 'http://localhost:6011', // TODO: prefs.get('hostname'),
+        room: room,
         nickname: nickname,
         wrtc: null,
         voice: Voice
@@ -103,19 +101,22 @@ define(function (require, exports, module) {
         if (fromWebPath(filePath) === documentRelativePath) {
           cb(currentEditor._codeMirror.posFromIndex(index))
         } else {
-          var absPath = projectBasePath+fromWebPath(filePath)
+          var absPath = projectBasePath + fromWebPath(filePath)
           DocumentManager.getDocumentForPath(absPath).then(function (doc) {
             doc._ensureMasterEditor()
             cb(doc._masterEditor._codeMirror.posFromIndex(index))
           })
         }
       }
-      
+
       // setup remote listeners
-      remote.voice.on('join', function () {
-        button.className = 'active voice'
-        isInCall = true
+      remote.once('voice', function () {
+        remote.voice.on('join', function () {
+          button.className = 'active voice'
+          isInCall = true
+        })
       })
+
       remote.once('ready', function () {
         FileSystemWrapper.getProject(function (filePath, content) {
           remote.createFile(toWebPath(filePath), content)
@@ -125,87 +126,95 @@ define(function (require, exports, module) {
       remote.on('changeSelection', handleRemoteSelection)
       remote.on('createFile', handleRemoteCreateFile)
       remote.on('deleteFile', handleRemoteDeleteFile)
-      //remote.on('renameFile', handleRemoteRename)
+      // remote.on('renameFile', handleRemoteRename)
       remote.on('lostPeer', handleLostPeer)
-      //remote.on('gotPeer', handleLostPeer)
-      //remote.on('createDir', handleRemoteCreateDir)
+      // remote.on('gotPeer', handleLostPeer)
+      // remote.on('createDir', handleRemoteCreateDir)
 
       isSyncing = true
-      button.className='active'
-      
+      button.className = 'active'
+
       EditorWrapper.setupListeners()
       FileSystemWrapper.setupListeners()
 
       console.log('MH started')
     })
   }
-  
+
   function handleStop () {
     if (remote) {
       remote.destroy()
       remote = null
     }
-    
+
     isSyncing = false
-    button.className=''
-    
+    button.className = ''
+
     EditorWrapper.removeListeners()
     FileSystemWrapper.removeListeners()
-    
+
     console.log('MH stopped')
   }
-  
+
   /* Local Listeners */
   
-  function handleLocalDeleteFile (filePath) {
-    remote.deleteFile(toWebPath(filePath))
-  }
-  
-  function handleLocalCreateFile (filePath, content) {
-    remote.createFile(toWebPath(filePath), change)
+  function handleLocalChangeFile (filePath, change) {
+    console.log('local change')
+    remote.changeFile(toWebPath(filePath), change)
   }
   
   function handleLocalSelection (filePath, selection) {
+    console.log('local selection')
     remote.changeSelection({
       filePath: toWebPath(filePath),
       change: selection
     })
   }
-  
-  function handleLocalChangeFile (filePath, change) {
-    remote.changeFile(toWebPath(filePath), change)
+
+  function handleLocalCreateFile (filePath, content) {
+    console.log('local create file')
+    remote.createFile(toWebPath(filePath), content)
   }
   
+  function handleLocalDeleteFile (filePath) {
+    console.log('local delete file')
+    remote.deleteFile(toWebPath(filePath))
+  }
+
   /* Remote listeners */
-  
+
   function handleRemoteChangeFile (data) {
+    console.log('remote change')
     EditorWrapper.change(fromWebPath(data.filePath), data.change)
   }
-  
+
   function handleRemoteSelection (data) {
+    console.log('remote seleciton')
     EditorWrapper.highlight(fromWebPath(data.filePath), data.change)
   }
-  
+
   function handleRemoteCreateFile (data) {
+    console.log('remote create file')
     FileSystemWrapper.createFile(fromWebPath(data.filePath), data.content)
   }
-  
+
   function handleRemoteDeleteFile (data) {
-    FileSystemWrapper.deleteFile(fromWebPath(data.filePath)
+    console.log('remote delete file')
+    FileSystemWrapper.deleteFile(fromWebPath(data.filePath))
   }
-  
-  function handleLostPeer(peer) {
+
+  function handleLostPeer (peer) {
     if (!isSyncing) return
-    
+
     UI.showLostConnection(peer.metadata.nickname)
   }
-  
+
   /* Utilities to convert path formats */
-  
+
   function toWebPath (path) {
-    return path[0] === '/' ? path : '/'+path
+    return path[0] === '/' ? path : '/' + path
   }
-  
+
   function fromWebPath (path) {
     return path[0] === '/' ? path.slice(1) : path
   }
