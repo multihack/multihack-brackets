@@ -7,7 +7,6 @@ define(function (require, exports, module) {
   var AppInit = brackets.getModule('utils/AppInit')
   var PreferencesManager = brackets.getModule('preferences/PreferencesManager')
   var EditorManager = brackets.getModule('editor/EditorManager')
-  var DocumentManager = brackets.getModule('document/DocumentManager')
   var ProjectManager = brackets.getModule('project/ProjectManager')
   var ExtensionUtils = brackets.getModule('utils/ExtensionUtils')
 
@@ -24,11 +23,6 @@ define(function (require, exports, module) {
   var isSyncing = false
   var isInCall = false
 
-  var currentEditor = null
-
-  var projectBasePath = null
-  var documentRelativePath = null
-
   ExtensionUtils.loadStyleSheet(module, 'widget/css/main.css')
 
   UI.injectButton()
@@ -37,6 +31,7 @@ define(function (require, exports, module) {
   var button = document.querySelector('#edc-multihack-btn')
 
   button.addEventListener('click', function () {
+    console.log('click')
     if (isSyncing) {
       UI.openModal()
     } else {
@@ -87,7 +82,9 @@ define(function (require, exports, module) {
   }
 
   function handleStart () {
+    console.log('handleStart')
     UI.getRoomAndNickname(function (room, nickname) {
+      console.log(room, nickname)
       if (!room) return
 
       remote = new RemoteManager({
@@ -98,27 +95,23 @@ define(function (require, exports, module) {
         voice: Voice
       })
       remote.posFromIndex = function (filePath, index, cb) {
-        if (fromWebPath(filePath) === documentRelativePath) {
-          cb(currentEditor._codeMirror.posFromIndex(index))
-        } else {
-          var absPath = projectBasePath + fromWebPath(filePath)
-          DocumentManager.getDocumentForPath(absPath).then(function (doc) {
-            doc._ensureMasterEditor()
-            cb(doc._masterEditor._codeMirror.posFromIndex(index))
-          })
-        }
+        EditorWrapper.posFromIndex(fromWebPath(filePath), index, cb)
       }
 
       // setup remote listeners
       remote.once('voice', function () {
+        console.log('voice')
         remote.voice.on('join', function () {
+          console.log('voice join')
           button.className = 'active voice'
           isInCall = true
         })
       })
 
       remote.once('ready', function () {
+        console.log('yjs ready')
         FileSystemWrapper.getProject(function (filePath, content) {
+          console.log('got project')
           remote.createFile(toWebPath(filePath), content)
         })
       })
@@ -157,12 +150,12 @@ define(function (require, exports, module) {
   }
 
   /* Local Listeners */
-  
+
   function handleLocalChangeFile (filePath, change) {
     console.log('local change')
     remote.changeFile(toWebPath(filePath), change)
   }
-  
+
   function handleLocalSelection (filePath, selection) {
     console.log('local selection')
     remote.changeSelection({
@@ -175,7 +168,7 @@ define(function (require, exports, module) {
     console.log('local create file')
     remote.createFile(toWebPath(filePath), content)
   }
-  
+
   function handleLocalDeleteFile (filePath) {
     console.log('local delete file')
     remote.deleteFile(toWebPath(filePath))
