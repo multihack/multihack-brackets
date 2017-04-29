@@ -34,6 +34,7 @@ define(function (require, exports, module) {
   var nickname = null
   var knownDocs = {}
   var room
+  var remoteCarets = []
   
   ExtensionUtils.loadStyleSheet(module, 'widget/css/main.css')
   
@@ -232,15 +233,15 @@ define(function (require, exports, module) {
   function handleEditorChange ($event, newEditor, oldEditor) {
     
     if (oldEditor) {
-      oldEditor._codeMirror.off('change', sendLocalChange)
-      oldEditor._codeMirror.off('beforeSelectionChange', sendLocalSelect)
+      oldEditor._codeMirror.off('changes', onCodeChanges)
+      oldEditor._codeMirror.off('beforeSelectionChange', onBeforeSelectionChange)
     }
 
     if (newEditor) {
       currentEditor = newEditor
       documentRelativePath = FileUtils.getRelativeFilename(projectBasePath, newEditor.document.file.fullPath)
-      newEditor._codeMirror.on('change', sendLocalChange)
-      newEditor._codeMirror.on('beforeSelectionChange', sendLocalSelect)
+      newEditor._codeMirror.on('changes', onCodeChanges)
+      newEditor._codeMirror.on('beforeSelectionChange', onBeforeSelectionChange)
       
       if (isSyncing && documentRelativePath && !knownDocs[toWebPath(documentRelativePath)]) {
         knownDocs[toWebPath(documentRelativePath)] = true
@@ -254,9 +255,70 @@ define(function (require, exports, module) {
     }
   }
   
+  function onCodeChanges (cm, changes) {
+    changes.forEach(function (change) {
+      sendLocalChange(cm, change)
+    })
+    sendLocalCaretsMoves(cm, changes)
+  }
+  
+  function onBeforeSelectionChange (cm, change) {
+    sendLocalSelect(cm, change)
+    sendLocalCaretsMoves(cm, change)
+  }
+  
+  function isSelection (range) {
+    return range.head.ch !== range.anchor.ch || range.head.line !== range.anchor.line
+  }
+  
+  function sendLocalCaretsMoves (cm, change) {
+    // This function can be called from CodeMirror changes or beforeSelectionChange events
+    var caretsMoves = {}
+    
+    // If it is called by beforeSelectionChange
+    // just return the position of an CMs anchor
+    if (change.ranges) {
+      caretsMoves = change.ranges.filter(function (range) {
+        return !isSelection(range);
+      }).map(function (range) {
+        return range.anchor
+      })      
+    } else {
+      // When it is called due to actual change in the file
+      // Due to copies/pastes or any other multiline change we need to manually calc
+      // the position of each caret.
+      caretsMoves = change.map(function (change) {
+        var linesChanged = change.text.length,
+            lastChangedLineIndex = linesChanged - 1,
+            // get last line that the change affected
+            line = change.from.line + lastChangedLineIndex 
+        
+        // set the ch position to equal the last line length
+        ch = change.text[lastChangedLineIndex].length 
+        
+        // if that wasn't a paste, but a simple keyboard input
+        // add to it the starting position of a change
+        if (linesChanged == 1) {
+          ch += change.from.ch
+        }
+        
+        return { 
+          line: line,
+          ch: ch
+        }
+      })
+    }
+    
+    sendLocalChange(cm, {
+      type: 'carets',
+      ranges: caretsMoves
+    })
+  }
+  
   function sendLocalSelect (cm, change) {
-    var ranges = change.ranges.filter(function (range) {
-      return range.head.ch !== range.anchor.ch || range.head.line !== range.anchor.line
+    
+    var selections = change.ranges.filter(function (range) {
+      return isSelection(range)
     }).map(function (range) {
       var nr = JSON.parse(JSON.stringify(range))
       if (nr.head.line > nr.anchor.line || (
@@ -271,7 +333,7 @@ define(function (require, exports, module) {
     
     sendLocalChange(cm, {
       type: 'selection',
-      ranges: ranges
+      ranges: selections
     })
   }
   
@@ -382,6 +444,7 @@ define(function (require, exports, module) {
   }
   
   function handleRemoteSelect (data) {
+    // TODO: support tracking in closed files
     if (fromWebPath(data.filePath) !== documentRelativePath) return
     
     currentEditor._codeMirror.getAllMarks().forEach(function (mark) {
@@ -396,12 +459,31 @@ define(function (require, exports, module) {
     })
   }
   
+  function handleRemoteCarets (data) {
+    // TODO: support tracking in closed files
+    if (fromWebPath(data.filePath) !== documentRelativePath) return
+    
+    remoteCarets.forEach(function (el) {
+      el.parentNode.removeChild(el)
+    })
+    
+    // TODO: Clear only this specific peer carets, not everyones
+    remoteCarets = []
+    
+    data.change.ranges.forEach(function (caret) {
+      insertRemoteCaret(currentEditor._codeMirror, caret);
+    })    
+  }
+  
   function handleRemoteChange (data) {    
     if (data.change.type === 'rename') {
       handleRemoteRename(data)
       return
     } else if (data.change.type === 'selection') {
       handleRemoteSelect(data)
+      return
+    } else if (data.change.type === 'carets') {
+      handleRemoteCarets(data)
       return
     }
     
@@ -513,6 +595,17 @@ define(function (require, exports, module) {
       text: text,
       className: isPrimary ? 'primary' : ''
     }
+  }
+  
+  function insertRemoteCaret(cm, caretPos) {
+    var caretEl = document.createElement('div')
+    caretEl.classList.add('remoteCaret')
+    caretEl.style.height = cm.defaultTextHeight() + "px"
+    caretEl.style.marginTop = "-" + cm.defaultTextHeight() + "px"
+    
+    remoteCarets.push(caretEl);
+    
+    cm.addWidget(caretPos, caretEl, false)
   }
 
   AppInit.appReady(init)
