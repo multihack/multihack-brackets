@@ -33,7 +33,7 @@ define(function (require, exports, module) {
   button.addEventListener('click', function () {
     console.log('click')
     if (isSyncing) {
-      UI.openModal()
+      UI.openModal(isInCall, remote)
     } else {
       handleStart()
     }
