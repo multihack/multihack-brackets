@@ -34,7 +34,7 @@ define(function (require, exports, module) {
   var nickname = null
   var knownDocs = {}
   var room
-  var remoteCarets = new Set()
+  var remoteCarets = []
   
   ExtensionUtils.loadStyleSheet(module, 'widget/css/main.css')
   
@@ -233,7 +233,6 @@ define(function (require, exports, module) {
   function handleEditorChange ($event, newEditor, oldEditor) {
     
     if (oldEditor) {
-      oldEditor._codeMirror.off('change', onCodeChange)
       oldEditor._codeMirror.off('changes', onCodeChanges)
       oldEditor._codeMirror.off('beforeSelectionChange', onBeforeSelectionChange)
     }
@@ -241,7 +240,6 @@ define(function (require, exports, module) {
     if (newEditor) {
       currentEditor = newEditor
       documentRelativePath = FileUtils.getRelativeFilename(projectBasePath, newEditor.document.file.fullPath)
-      newEditor._codeMirror.on('change', onCodeChange)
       newEditor._codeMirror.on('changes', onCodeChanges)
       newEditor._codeMirror.on('beforeSelectionChange', onBeforeSelectionChange)
       
@@ -257,11 +255,10 @@ define(function (require, exports, module) {
     }
   }
   
-  function onCodeChange (cm, change) {
-    sendLocalChange(cm, change)
-  }
-  
   function onCodeChanges (cm, changes) {
+    changes.forEach(function (change) {
+      sendLocalChange(cm, change)
+    })
     sendLocalCaretsMoves(cm, changes)
   }
   
@@ -275,7 +272,11 @@ define(function (require, exports, module) {
   }
   
   function sendLocalCaretsMoves (cm, change) {
+    // This function can be called from CodeMirror changes or beforeSelectionChange events
     var caretsMoves = {}
+    
+    // If it is called by beforeSelectionChange
+    // just return the position of an CMs anchor
     if (change.ranges) {
       caretsMoves = change.ranges.filter(function (range) {
         return !isSelection(range);
@@ -283,13 +284,20 @@ define(function (require, exports, module) {
         return range.anchor
       })      
     } else {
+      // When it is called due to actual change in the file
+      // Due to copies/pastes or any other multiline change we need to manually calc
+      // the position of each caret.
       caretsMoves = change.map(function (change) {
         var linesChanged = change.text.length,
             lastChangedLineIndex = linesChanged - 1,
-            line = change.from.line + lastChangedLineIndex
+            // get last line that the change affected
+            line = change.from.line + lastChangedLineIndex 
         
+        // set the ch position to equal the last line length
         ch = change.text[lastChangedLineIndex].length 
         
+        // if that wasn't a paste, but a simple keyboard input
+        // add to it the starting position of a change
         if (linesChanged == 1) {
           ch += change.from.ch
         }
@@ -436,6 +444,7 @@ define(function (require, exports, module) {
   }
   
   function handleRemoteSelect (data) {
+    // TODO: support tracking in closed files
     if (fromWebPath(data.filePath) !== documentRelativePath) return
     
     currentEditor._codeMirror.getAllMarks().forEach(function (mark) {
@@ -451,13 +460,15 @@ define(function (require, exports, module) {
   }
   
   function handleRemoteCarets (data) {
+    // TODO: support tracking in closed files
     if (fromWebPath(data.filePath) !== documentRelativePath) return
     
     remoteCarets.forEach(function (el) {
       el.parentNode.removeChild(el)
     })
     
-    remoteCarets.clear()
+    // TODO: Clear only this specific peer carets, not everyones
+    remoteCarets = []
     
     data.change.ranges.forEach(function (caret) {
       insertRemoteCaret(currentEditor._codeMirror, caret);
@@ -592,7 +603,7 @@ define(function (require, exports, module) {
     caretEl.style.height = cm.defaultTextHeight() + "px"
     caretEl.style.marginTop = "-" + cm.defaultTextHeight() + "px"
     
-    remoteCarets.add(caretEl);
+    remoteCarets.push(caretEl);
     
     cm.addWidget(caretPos, caretEl, false)
   }
