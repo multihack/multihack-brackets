@@ -522,6 +522,8 @@ define(function (require, exports, module) {
     
       $tooltip.css('top', $(button).offset().top + "px")
       $tooltip.css('right', $('#main-toolbar').width())
+    
+      $tooltip.fadeIn(200)
       
       $(document.body).prepend($tooltip)
   }
