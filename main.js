@@ -22,6 +22,7 @@ define(function (require, exports, module) {
 
   var RemoteManager = require('./lib/remote')
   var PeerGraph = require('./lib/npm/p2p-graph')
+  var Tooltip = require('./lib/tooltip')
 
   var remote = null
   var isSyncing = false
@@ -517,12 +518,12 @@ define(function (require, exports, module) {
   function handleLostPeer(peer) {
     if (!isSyncing) return
     
-    Dialogs.showModalDialog(
-      '', 
-      'Multihack', 
-      '<p>Your connection to "'+peer.metadata.nickname+'" was lost.</p>', 
-      [customButton('Ok')]
-    )
+      var $tooltip = Tooltip.create('Your connection to "' + peer.metadata.nickname + '" was lost.')
+    
+      $tooltip.css('top', $(button).offset().top + "px")
+      $tooltip.css('right', $('#main-toolbar').width())
+      
+      $(document.body).prepend($tooltip)
   }
   
   function handleRemoteDeleteFile (data) {
