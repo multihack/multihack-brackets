@@ -34,4 +34,5 @@
 .remoteCaret {
   background-color: #7fb971;
   width: 1px;
+  z-index: 2;
 }
