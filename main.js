@@ -27,6 +27,7 @@ define(function (require, exports, module) {
 
   UI.injectButton()
   UI.on('voiceToggle', handleVoiceToggle)
+  UI.on('stop', handleStop)
 
   var button = document.querySelector('#edc-multihack-btn')
 
@@ -54,10 +55,12 @@ define(function (require, exports, module) {
 
   function setupEventListeners () {
     FileSystemWrapper.on('createFile', handleLocalCreateFile)
-    FileSystemWrapper.on('renameFile', handleLocalDeleteFile)
+    FileSystemWrapper.on('renameFile', handleLocalRenameFile)
     FileSystemWrapper.on('deleteFile', handleLocalDeleteFile)
+    
     EditorWrapper.on('changeFile', handleLocalChangeFile)
-    EditorManager.on('changeSelection', handleLocalSelection)
+    EditorWrapper.on('changeSelection', handleLocalSelection)
+    
     ProjectManager.on('projectOpen', handleStop) // Stop sync on project open
   }
 
@@ -111,18 +114,19 @@ define(function (require, exports, module) {
       remote.once('ready', function () {
         console.log('yjs ready')
         FileSystemWrapper.getProject(function (filePath, content) {
-          console.log('got project')
-          remote.createFile(toWebPath(filePath), content)
+          console.log('sending project')
+          handleLocalCreateFile(toWebPath(filePath), content)
         })
       })
       remote.on('changeFile', handleRemoteChangeFile)
       remote.on('changeSelection', handleRemoteSelection)
+      
       remote.on('createFile', handleRemoteCreateFile)
+      remote.on('createDir', handleRemoteCreateDir)
       remote.on('deleteFile', handleRemoteDeleteFile)
-      // remote.on('renameFile', handleRemoteRename)
+      
       remote.on('lostPeer', handleLostPeer)
-      // remote.on('gotPeer', handleLostPeer)
-      // remote.on('createDir', handleRemoteCreateDir)
+      remote.on('gotPeer', handleGotPeer)
 
       isSyncing = true
       button.className = 'active'
@@ -135,13 +139,14 @@ define(function (require, exports, module) {
   }
 
   function handleStop () {
+    isSyncing = false
+    button.className = ''
+    
     if (remote) {
+      console.log(remote)
       remote.destroy()
       remote = null
     }
-
-    isSyncing = false
-    button.className = ''
 
     EditorWrapper.removeListeners()
     FileSystemWrapper.removeListeners()
@@ -151,11 +156,6 @@ define(function (require, exports, module) {
 
   /* Local Listeners */
 
-  function handleLocalChangeFile (filePath, change) {
-    console.log('local change')
-    remote.changeFile(toWebPath(filePath), change)
-  }
-
   function handleLocalSelection (filePath, selection) {
     console.log('local selection')
     remote.changeSelection({
@@ -163,10 +163,26 @@ define(function (require, exports, module) {
       change: selection
     })
   }
+  
+  function handleLocalChangeFile (filePath, change) {
+    console.log('local change')
+    console.log(filePath, change)
+    remote.changeFile(toWebPath(filePath), change)
+  }
 
   function handleLocalCreateFile (filePath, content) {
     console.log('local create file')
     remote.createFile(toWebPath(filePath), content)
+  }
+  
+  function handleLocalCreateDir (path) {
+    console.log('local create dir')
+    // TODO remote.createDir(path)
+  }
+  
+  function handleLocalRenameFile (oldPath, newPath) {
+    console.log('local rename file')
+    // TODO remote.renameFile(toWebPath(filePath), toWebPath(newPath))
   }
 
   function handleLocalDeleteFile (filePath) {
@@ -177,29 +193,39 @@ define(function (require, exports, module) {
   /* Remote listeners */
 
   function handleRemoteChangeFile (data) {
-    console.log('remote change')
+    console.log('remote change', FileSystemWrapper._mutex)
     EditorWrapper.change(fromWebPath(data.filePath), data.change)
   }
 
-  function handleRemoteSelection (data) {
+  function handleRemoteSelection (selections) {
     console.log('remote seleciton')
-    EditorWrapper.highlight(fromWebPath(data.filePath), data.change)
+    EditorWrapper.highlight(selections)
   }
 
   function handleRemoteCreateFile (data) {
     console.log('remote create file')
-    FileSystemWrapper.createFile(fromWebPath(data.filePath), data.content)
+    EditorWrapper.createFile(fromWebPath(data.filePath), data.content)
   }
-
+  
+  function handleRemoteCreateDir (data) {
+    console.log('remote create dir')
+    EditorWrapper.createDirectory(fromWebPath(data.filePath))
+  }
+  
   function handleRemoteDeleteFile (data) {
     console.log('remote delete file')
-    FileSystemWrapper.deleteFile(fromWebPath(data.filePath))
+    EditorWrapper.deleteFile(fromWebPath(data.filePath))
   }
 
   function handleLostPeer (peer) {
     if (!isSyncing) return
 
-    UI.showLostConnection(peer.metadata.nickname)
+    UI.showLostConnection(button, peer.metadata.nickname)
+  }
+  
+  function handleGotPeer (peer) {
+    if (!isSyncing) return
+    // TODO
   }
 
   /* Utilities to convert path formats */
@@ -211,6 +237,8 @@ define(function (require, exports, module) {
   function fromWebPath (path) {
     return path[0] === '/' ? path.slice(1) : path
   }
+  
+  function noop () {}
 
   AppInit.appReady(init)
 })
