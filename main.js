@@ -91,7 +91,7 @@ define(function (require, exports, module) {
       if (!room) return
 
       remote = new RemoteManager({
-        hostname: 'http://localhost:6011', // TODO: prefs.get('hostname'),
+        hostname: prefs.get('hostname'),
         room: room,
         nickname: nickname,
         wrtc: null,
