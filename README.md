@@ -4,7 +4,7 @@
 
 Synchronizes code and project structure between multiple users in realtime.  
 
-Also check out [the web version](https://github.com/RationalCoding/multihack-web) and [vscode extension](https://github.com/RationalCoding/multihack-vscode).
+Also check out [the web version](https://github.com/RationalCoding/multihack-web).
 
 ## Usage 
 1. Open the folder containing your project (or an empty folder if you want your team's code).
