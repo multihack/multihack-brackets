@@ -7,7 +7,7 @@ Synchronizes code and project structure between multiple users in realtime.
 Also check out [the web version](https://github.com/RationalCoding/multihack-web) and [vscode extension](https://github.com/RationalCoding/multihack-vscode).
 
 ## Usage 
-1. Open the folder containing your project.
+1. Open the folder containing your project (or an empty folder if you want your team's code).
 2. Press the sync icon on the right toolbar.  
 3. Enter the same room ID.  
 4. Your code is now being synced!  
@@ -21,12 +21,6 @@ Brackets does not allow microphone access by default. You must launch brackets w
 
 `brackets --args --enable-media-stream` if you want to enable voice calls.  
 
-## Fetch Code
-
-If someone joins the room with new code, it will not be watched and therefore not synced.  
-
-To get unwatched code or force a sync, press "Fetch Code" on the side that doesn't have the correct code.
-
 ## Running Your Own Instance
 This extension points to the author's server by default. No code is sent through the server as long as your version of Brackets supports WebRTC (which most do). 
 
@@ -34,10 +28,8 @@ If you want your own instance, see [multihack-server](https://github.com/Rationa
 
 You can target a different host through the Brackets option **multihack-brackets.hostname**.
 
-## Introducing version 3.0!
+## Introducting Version 4.0!
 
-- Network has changed from server forwarding to 100% peer-to-peer! Blazing fast speeds (especially over LANs), and unlimited project sizes!
+- Multihack now uses a [Conflict-Free Replicated Data Type](https://en.wikipedia.org/wiki/Conflict-free_replicated_data_type) to merge conflicts and ensure everyone is always looking at the same code. Thanks @kifhan for assistance with this!
 
-- Check out [the new protocol](https://github.com/RationalCoding/multihack-wire) if you're wondering why it's so much faster!
-
-- General performance and quality improvements.
+- You can now see your team's carets, and the notifications are less instrusive. Thanks to @Worie!
