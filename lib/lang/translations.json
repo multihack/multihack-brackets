@@ -45,7 +45,6 @@
     "join_leave_call": "Join/Leave Call",
     "leave_room": "Leave Room"
   },
-  
   "de": {
     "save_success_title": "Speichern erfolgreich",
     "save_fail_title": "Speichern fehlgeschlagen",
@@ -91,4 +90,5 @@
     "join_call": "Konferenz beitreten" ,
     "join_leave_call": "Konferenz beitreten/verlassen",
     "leave_room": "Raum verlassen"
+  }
 }
