@@ -9,6 +9,7 @@ define(function (require, exports, module) {
   var PreferencesManager = brackets.getModule('preferences/PreferencesManager')
   var prefs = PreferencesManager.getExtensionPrefs('multihack-brackets')
   var DEFAULT_HOSTNAME = 'https://quiet-shelf-57463.herokuapp.com'
+  var DEFAULT_ROOM = '$%#NONE/RANDOM#%$'
 
   var RemoteManager = require('./lib/npm/multihack-core')
   var EditorWrapper = require('./lib/editor')
