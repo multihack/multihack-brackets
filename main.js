@@ -1,20 +1,19 @@
 /* global define, brackets, window */
 
 define(function (require, exports, module) {
-  var DEFAULT_HOSTNAME = 'https://quiet-shelf-57463.herokuapp.com'
-
   var AppInit = brackets.getModule('utils/AppInit')
-  var PreferencesManager = brackets.getModule('preferences/PreferencesManager')
   var EditorManager = brackets.getModule('editor/EditorManager')
   var ProjectManager = brackets.getModule('project/ProjectManager')
   var ExtensionUtils = brackets.getModule('utils/ExtensionUtils')
 
+  var PreferencesManager = brackets.getModule('preferences/PreferencesManager')
   var prefs = PreferencesManager.getExtensionPrefs('multihack-brackets')
+  var DEFAULT_HOSTNAME = 'https://quiet-shelf-57463.herokuapp.com'
 
   var RemoteManager = require('./lib/npm/multihack-core')
   var EditorWrapper = require('./lib/editor')
   var FileSystemWrapper = require('./lib/filesystem')
-  var UI = require('./lib/ui')
+  var UI = require('./lib/ui')(prefs)
   var Voice = require('./lib/voice')
 
   var remote = null
@@ -49,6 +48,7 @@ define(function (require, exports, module) {
 
   function setupPreferences () {
     prefs.definePreference('hostname', 'string', DEFAULT_HOSTNAME)
+    prefs.definePreference('lastRoom', 'string', DEFAULT_ROOM)
     prefs.save()
   }
 
