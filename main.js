@@ -53,7 +53,7 @@ define(function (require, exports, module) {
     prefs.definePreference('hostname', 'string', DEFAULT_HOSTNAME)
     prefs.definePreference('lastRoom', 'string', DEFAULT_ROOM)
     prefs.definePreference('remoteSelectionColor', 'string', DEFAULT_REMOTE_SELECTION_COLOR)
-	  prefs.definePreference('remoteCaretColor', 'string', DEFAULT_REMOTE_CARET_COLOR)
+    prefs.definePreference('remoteCaretColor', 'string', DEFAULT_REMOTE_CARET_COLOR)
     prefs.save()
     
     ExtensionUtils.addEmbeddedStyleSheet('.remoteSelection {background-color: '+prefs.get('remoteSelectionColor')+';}.remoteCaret {background-color: '+prefs.get('remoteCaretColor')+';}')
