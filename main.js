@@ -10,6 +10,8 @@ define(function (require, exports, module) {
   var prefs = PreferencesManager.getExtensionPrefs('multihack-brackets')
   var DEFAULT_HOSTNAME = 'https://quiet-shelf-57463.herokuapp.com'
   var DEFAULT_ROOM = '$%#NONE/RANDOM#%$'
+  var DEFAULT_REMOTE_SELECTION_COLOR = '#3f5d38'
+  var DEFAULT_REMOTE_CARET_COLOR = '#7fb971'
 
   var RemoteManager = require('./lib/npm/multihack-core')
   var EditorWrapper = require('./lib/editor')
@@ -50,7 +52,11 @@ define(function (require, exports, module) {
   function setupPreferences () {
     prefs.definePreference('hostname', 'string', DEFAULT_HOSTNAME)
     prefs.definePreference('lastRoom', 'string', DEFAULT_ROOM)
+    prefs.definePreference('remoteSelectionColor', 'string', DEFAULT_REMOTE_SELECTION_COLOR)
+	  prefs.definePreference('remoteCaretColor', 'string', DEFAULT_REMOTE_CARET_COLOR)
     prefs.save()
+    
+    ExtensionUtils.addEmbeddedStyleSheet('.remoteSelection {background-color: '+prefs.get('remoteSelectionColor')+';}.remoteCaret {background-color: '+prefs.get('remoteCaretColor')+';}')
   }
 
   function setupEventListeners () {
