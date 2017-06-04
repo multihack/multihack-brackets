@@ -56,7 +56,10 @@ define(function (require, exports, module) {
     prefs.definePreference('remoteCaretColor', 'string', DEFAULT_REMOTE_CARET_COLOR)
     prefs.save()
     
-    ExtensionUtils.addEmbeddedStyleSheet('.remoteSelection {background-color: '+prefs.get('remoteSelectionColor')+';}.remoteCaret {background-color: '+prefs.get('remoteCaretColor')+';}')
+    ExtensionUtils.addEmbeddedStyleSheet(
+      '.remoteSelection { background-color: ' + prefs.get('remoteSelectionColor')+'; }' +
+      '.remoteCaret { background-color: ' + prefs.get('remoteCaretColor') + '; }'
+    )
   }
 
   function setupEventListeners () {
