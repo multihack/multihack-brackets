@@ -1,7 +1,7 @@
 # multihack-brackets
 
 [![Gitter chat](https://img.shields.io/badge/gitter-join%20chat%20%E2%86%92-brightgreen.svg)](https://gitter.im/multihack/multihack)
-![Gitter chat](https://img.shields.io/badge/status-alpha-green.svg?style=flat)
+![Alpha](https://img.shields.io/badge/status-alpha-green.svg?style=flat)
 
 Synchronizes code and project structure between multiple users in realtime.  
 
