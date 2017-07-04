@@ -1,7 +1,7 @@
 {
   "name": "multihack-brackets",
   "title": "Multihack",
-  "description": "Supercharge your IDE with realtime collaboration features! Code synchronization and integrated voice calls.",
+  "description": "Realtime collaboration for programmers. ALPHA",
   "homepage": "https://github.com/RationalCoding/multihack-brackets",
   "version": "4.2.2",
   "author": "Thomas Mullen",
