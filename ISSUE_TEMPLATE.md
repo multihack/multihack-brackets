@@ -24,6 +24,6 @@ Please include OS version, brackets version, and any network information (same n
 <summary>Click to expand</summary>
 
 ```
-Paste your console log here
+[Paste your console log here]
 ```
 <details>
