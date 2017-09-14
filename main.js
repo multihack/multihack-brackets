@@ -123,7 +123,6 @@ define(function (require, exports, module) {
       remote.once('ready', function () {
         console.log('yjs ready')
         FileSystemWrapper.getProject(function (filePath, content, status) {
-          debugger;
           UI.showSyncProgress(button, status)
           handleLocalCreateFile(toWebPath(filePath), content)
         })
