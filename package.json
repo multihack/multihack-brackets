@@ -3,7 +3,7 @@
   "title": "Multihack",
   "description": "Realtime collaboration for programmers. ALPHA",
   "homepage": "https://github.com/RationalCoding/multihack-brackets",
-  "version": "4.3.1",
+  "version": "4.4.0",
   "author": "Thomas Mullen",
   "license": "MIT",
   "scripts": {

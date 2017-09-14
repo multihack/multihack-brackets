@@ -122,8 +122,9 @@ define(function (require, exports, module) {
 
       remote.once('ready', function () {
         console.log('yjs ready')
-        FileSystemWrapper.getProject(function (filePath, content) {
-          console.log('sending project')
+        FileSystemWrapper.getProject(function (filePath, content, status) {
+          debugger;
+          UI.showSyncProgress(button, status)
           handleLocalCreateFile(toWebPath(filePath), content)
         })
       })
@@ -181,6 +182,7 @@ define(function (require, exports, module) {
 
   function handleLocalCreateFile (filePath, content) {
     console.log('local create file')
+    // destroy any useless save messages
     remote.createFile(toWebPath(filePath), content)
   }
   

@@ -8,6 +8,7 @@
     "deploy_fail_title": "Deploy Failed",
     "deploy_success": "Anyone can visit your site at<br><a target=\"_blank\" href=\"{{{url}}}\">{{{url}}}</a>",
     "lost_connection": "Your connection to \"{{nickname}}\" has been lost.",
+    "sync_progress": "File Sync: {{current}}/{{total}}",
     "history_item": "Multihack Room {{room}}",
     "server": "Server",
     "you": "You",
