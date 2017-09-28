@@ -29,7 +29,7 @@ If you want your own instance, see [multihack-server](https://github.com/Rationa
 
 You can target a different host through the Brackets option **multihack-brackets.hostname**.
 
-## Introducting Version 4.0!
+## Introducing Version 4.0!
 
 - Multihack now uses a [Conflict-Free Replicated Data Type](https://en.wikipedia.org/wiki/Conflict-free_replicated_data_type) to merge conflicts and ensure everyone is always looking at the same code. Thanks @kifhan for assistance with this!
 
