@@ -27,6 +27,7 @@
     "folder": "Folder",
     "delete": "Delete",
     "talk": "Talk",
+    "alert-unsaved": "Save your file before editing!",
     "new_file": "New File",
     "new_folder": "New Folder",
     "nickname_prompt_title": "Choose Nickname",

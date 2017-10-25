@@ -69,8 +69,13 @@ define(function (require, exports, module) {
     
     EditorWrapper.on('changeFile', handleLocalChangeFile)
     EditorWrapper.on('changeSelection', handleLocalSelection)
+    EditorWrapper.on('alert', handleAlert)
     
     ProjectManager.on('projectOpen', handleStop) // Stop sync on project open
+  }
+  
+  function handleAlert (alert) {
+    UI.showAlert(button, alert)
   }
 
   function handleVoiceToggle () {
@@ -203,7 +208,7 @@ define(function (require, exports, module) {
   /* Remote listeners */
 
   function handleRemoteChangeFile (data) {
-    console.log('remote change', FileSystemWrapper._mutex)
+    console.log('remote change', data)
     EditorWrapper.change(fromWebPath(data.filePath), data.change)
   }
 
