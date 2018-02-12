@@ -7,6 +7,8 @@ Synchronizes code and project structure between multiple users in realtime.
 
 Also check out [the web version](https://github.com/RationalCoding/multihack-web).
 
+**Still in active development. Expect instability and constant updates.**
+
 ## Usage 
 1. Open the folder containing your project (or an empty folder if you want your team's code).
 2. Press the sync icon on the right toolbar.  
